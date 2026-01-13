@@ -1,26 +1,63 @@
+@import url('https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;700;900&family=Archivo+SemiExpanded:wght@400;500;700;900&display=swap');
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* ROI Works Brand Colors */
+  --roi-orange: #FF6400;
+  --roi-orange-80: #FF8333;
+  --roi-orange-60: #FFA266;
+  --roi-blue: #0022D2;
+  --roi-blue-80: #334ED8;
+  --roi-blue-60: #667ADE;
+  --roi-gray-light: #E3E3E3;
+  --roi-gray-dark: #3C3E43;
+  --roi-gray-darker: #2A2B2E;
+  --roi-black: #000000;
+  --roi-white: #FFFFFF;
+
+  /* Theme colors */
+  --background: var(--roi-gray-dark);
+  --foreground: var(--roi-white);
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  --color-roi-orange: var(--roi-orange);
+  --color-roi-orange-80: var(--roi-orange-80);
+  --color-roi-orange-60: var(--roi-orange-60);
+  --color-roi-blue: var(--roi-blue);
+  --color-roi-blue-80: var(--roi-blue-80);
+  --color-roi-blue-60: var(--roi-blue-60);
+  --color-roi-gray-light: var(--roi-gray-light);
+  --color-roi-gray-dark: var(--roi-gray-dark);
+  --color-roi-gray-darker: var(--roi-gray-darker);
+  --font-archivo: 'Archivo', sans-serif;
+  --font-archivo-expanded: 'Archivo SemiExpanded', sans-serif;
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-archivo);
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-archivo-expanded);
+  font-weight: 900;
+}
+
+/* Component layer */
+.btn-primary {
+  @apply bg-roi-orange text-black font-bold py-3 px-6 rounded-lg
+         hover:bg-roi-orange-80 transition-colors duration-200 cursor-pointer;
+}
+
+.btn-secondary {
+  @apply border border-roi-orange text-roi-orange font-bold py-3 px-6 rounded-lg
+         hover:bg-roi-orange hover:text-black transition-colors duration-200 cursor-pointer;
+}
+
+.card {
+  @apply bg-roi-gray-darker rounded-xl p-6;
 }
