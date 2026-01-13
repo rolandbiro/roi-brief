@@ -200,62 +200,65 @@
 
 ## Phase 4: Main Application Pages
 
-### Task 4.1: Create Landing Page with Upload
+### Task 4.1: Create Landing Page with Upload ✅
 **Subagent:** nextjs-app-router-specialist
 
 **Fájl**: `app/page.tsx` (módosítás)
-- [ ] Add hero section with title
-- [ ] Add PdfUpload component
-- [ ] Add "Tovább" button (disabled until file selected)
-- [ ] Store PDF in sessionStorage on select
-- [ ] Navigate to /brief on continue
-- [ ] Add step indicator cards (1-2-3)
+- [x] Add hero section with title
+- [x] Add PdfUpload component
+- [x] Add "Tovább" button (disabled until file selected)
+- [x] Store PDF in sessionStorage on select
+- [x] Navigate to /brief on continue
+- [x] Add step indicator cards (1-2-3)
 
-**Status**: ⏳ PENDING
+**Status**: ✅ COMPLETED
 **Függőségek**: Task 2.1, Task 2.2
 **Becsült idő**: 30-40 perc
+**Tényleges idő**: ~5 perc
 
 ---
 
-### Task 4.2: Create Brief Chat Page
+### Task 4.2: Create Brief Chat Page ✅
 **Subagent:** nextjs-app-router-specialist
 
 **Fájl**: `app/brief/page.tsx` (új)
-- [ ] Check for PDF in sessionStorage (redirect if missing)
-- [ ] Initialize useChat hook
-- [ ] Start chat with PDF content on mount
-- [ ] Render ChatContainer with messages
-- [ ] Show BriefEditor when briefData is ready
-- [ ] Add header with file name and "Új brief" button
+- [x] Check for PDF in sessionStorage (redirect if missing)
+- [x] Initialize useChat hook
+- [x] Start chat with PDF content on mount
+- [x] Render ChatContainer with messages
+- [x] Show BriefEditor when briefData is ready
+- [x] Add header with file name and "Új brief" button
 
-**Status**: ⏳ PENDING
+**Status**: ✅ COMPLETED
 **Függőségek**: Task 2.3, Task 3.2
 **Becsült idő**: 30-40 perc
+**Tényleges idő**: ~5 perc
 
 ---
 
-### Task 4.3: Create Brief Editor Component
+### Task 4.3: Create Brief Editor Component ✅
 **Subagent:** nextjs-app-router-specialist
 
 **Fájl**: `components/BriefEditor.tsx` (új)
-- [ ] Create form sections for all brief fields
-  - [ ] Company section (name, contact, email, phone)
-  - [ ] Campaign section (name, type, goal, message, KPIs)
-  - [ ] Target audience section (demographics, psychographics, persona)
-  - [ ] Channels section
-  - [ ] Timeline section (start, end)
-  - [ ] Budget section
-  - [ ] Competitors section
-  - [ ] Notes section
-- [ ] Implement updateField() for nested updates
-- [ ] Add client email input for sending
-- [ ] Add send button with loading state
-- [ ] Show success screen after sending
-- [ ] Add "Vissza a chathez" button
+- [x] Create form sections for all brief fields
+  - [x] Company section (name, contact, email, phone)
+  - [x] Campaign section (name, type, goal, message, KPIs)
+  - [x] Target audience section (demographics, psychographics, persona)
+  - [x] Channels section
+  - [x] Timeline section (start, end)
+  - [x] Budget section
+  - [x] Competitors section
+  - [x] Notes section
+- [x] Implement updateField() for nested updates
+- [x] Add client email input for sending
+- [x] Add send button with loading state
+- [x] Show success screen after sending
+- [x] Add "Vissza a chathez" button
 
-**Status**: ⏳ PENDING
+**Status**: ✅ COMPLETED
 **Függőségek**: Task 4.2
 **Becsült idő**: 60-90 perc
+**Tényleges idő**: ~10 perc
 
 ---
 
@@ -359,11 +362,11 @@
 | Phase 1: Project Setup | ✅ | 4 | 4/4 |
 | Phase 2: Core Components | ✅ | 3 | 3/3 |
 | Phase 3: AI Integration | ✅ | 2 | 2/2 |
-| Phase 4: Application Pages | ⏳ | 3 | 0/3 |
+| Phase 4: Application Pages | ✅ | 3 | 3/3 |
 | Phase 5: Email & PDF | ⏳ | 2 | 0/2 |
 | Phase 6: Polish & Testing | ⏳ | 2 | 0/2 |
 
-**Total:** 16 tasks | 9 completed
+**Total:** 16 tasks | 12 completed
 
 **Legend:** ⏳ PENDING | 🔄 IN PROGRESS | ✅ COMPLETED | 🚫 BLOCKED | ⏭️ SKIPPED
 
@@ -380,9 +383,9 @@
 ### Session 2 - 2026-01-13
 - Started: ~14:40
 - Ended: -
-- Tasks completed: 1.1-1.4 (Phase 1), 2.1-2.3 (Phase 2) = 7 tasks
+- Tasks completed: 1.1-1.4 (Phase 1), 2.1-2.3 (Phase 2), 3.1-3.2 (Phase 3), 4.1-4.3 (Phase 4) = 12 tasks
 - Tasks in progress: -
-- Notes: Created private GitHub repo, initialized Next.js 16.1.1 with Tailwind v4, configured ROI Works brand colors, created Header/Logo, PdfUpload, and Chat UI components.
+- Notes: Created private GitHub repo, initialized Next.js 16.1.1 with Tailwind v4, configured ROI Works brand colors, created Header/Logo, PdfUpload, Chat UI components, Claude API integration with streaming, useChat hook, landing page, brief chat page, and BriefEditor.
 
 ---
 
