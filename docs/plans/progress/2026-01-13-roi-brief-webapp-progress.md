@@ -157,42 +157,44 @@
 
 ## Phase 3: AI Integration
 
-### Task 3.1: Create Claude API Route with Streaming
+### Task 3.1: Create Claude API Route with Streaming ✅
 **Subagent:** typescript-expert
 
 **Fájl**: `lib/prompts.ts` (új)
-- [ ] Create BRIEF_SYSTEM_PROMPT constant
-- [ ] Define all brief fields to collect
-- [ ] Set AI persona (professional, Hungarian, magázódás)
-- [ ] Define JSON output format with markers
-- [ ] Create createInitialMessage() helper
+- [x] Create BRIEF_SYSTEM_PROMPT constant
+- [x] Define all brief fields to collect
+- [x] Set AI persona (professional, Hungarian, magázódás)
+- [x] Define JSON output format with markers
+- [x] Create createInitialMessage() helper
 
 **Fájl**: `app/api/chat/route.ts` (új)
-- [ ] Initialize Anthropic client
-- [ ] Handle POST request with messages
-- [ ] Create streaming response
-- [ ] Return SSE formatted stream
+- [x] Initialize Anthropic client
+- [x] Handle POST request with messages
+- [x] Create streaming response
+- [x] Return SSE formatted stream
 
-**Status**: ⏳ PENDING
+**Status**: ✅ COMPLETED
 **Függőségek**: Task 1.3, Task 1.4
 **Becsült idő**: 40-50 perc
+**Tényleges idő**: ~5 perc
 
 ---
 
-### Task 3.2: Create Chat Hook for State Management
+### Task 3.2: Create Chat Hook for State Management ✅
 **Subagent:** react-state-management-expert
 
 **Fájl**: `hooks/useChat.ts` (új)
-- [ ] Define state: messages, isLoading, streamingContent, briefData, error
-- [ ] Implement startChat() for initial PDF + greeting
-- [ ] Implement sendMessage() for user responses
-- [ ] Handle streaming response parsing
-- [ ] Implement checkForBriefData() to extract JSON
-- [ ] Return all state and functions
+- [x] Define state: messages, isLoading, streamingContent, briefData, error
+- [x] Implement startChat() for initial PDF + greeting
+- [x] Implement sendMessage() for user responses
+- [x] Handle streaming response parsing
+- [x] Implement checkForBriefData() to extract JSON
+- [x] Return all state and functions
 
-**Status**: ⏳ PENDING
+**Status**: ✅ COMPLETED
 **Függőségek**: Task 3.1
 **Becsült idő**: 40-50 perc
+**Tényleges idő**: ~5 perc
 
 ---
 
@@ -356,12 +358,12 @@
 |-------|--------|-------|-----------|
 | Phase 1: Project Setup | ✅ | 4 | 4/4 |
 | Phase 2: Core Components | ✅ | 3 | 3/3 |
-| Phase 3: AI Integration | ⏳ | 2 | 0/2 |
+| Phase 3: AI Integration | ✅ | 2 | 2/2 |
 | Phase 4: Application Pages | ⏳ | 3 | 0/3 |
 | Phase 5: Email & PDF | ⏳ | 2 | 0/2 |
 | Phase 6: Polish & Testing | ⏳ | 2 | 0/2 |
 
-**Total:** 16 tasks | 7 completed
+**Total:** 16 tasks | 9 completed
 
 **Legend:** ⏳ PENDING | 🔄 IN PROGRESS | ✅ COMPLETED | 🚫 BLOCKED | ⏭️ SKIPPED
 
