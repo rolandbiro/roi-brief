@@ -27,6 +27,7 @@ export default function BriefPage() {
   const router = useRouter();
   const pdfData = usePdfData();
   const [hideEditor, setHideEditor] = useState(false);
+  const [isParsing, setIsParsing] = useState(false);
   const chatStartedRef = useRef(false);
 
   const {
@@ -51,11 +52,27 @@ export default function BriefPage() {
     }
   }, [pdfData, router]);
 
-  // Start chat when PDF data is available (only once)
+  // Parse PDF and start chat when PDF data is available (only once)
   useEffect(() => {
     if (pdfData && !chatStartedRef.current) {
       chatStartedRef.current = true;
-      startChat(pdfData.base64, "");
+      setIsParsing(true);
+
+      // Extract text from PDF
+      fetch("/api/parse-pdf", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ base64: pdfData.base64 }),
+      })
+        .then((res) => res.json())
+        .then((data) => {
+          setIsParsing(false);
+          startChat(pdfData.base64, data.text || "");
+        })
+        .catch(() => {
+          setIsParsing(false);
+          startChat(pdfData.base64, "");
+        });
     }
   }, [pdfData, startChat]);
 
@@ -71,8 +88,19 @@ export default function BriefPage() {
   if (pdfData === null) {
     return (
       <div className="container mx-auto px-6 py-12">
-        <div className="flex items-center justify-center">
+        <div className="flex flex-col items-center justify-center">
           <div className="w-8 h-8 border-4 border-roi-orange border-t-transparent rounded-full animate-spin" />
+        </div>
+      </div>
+    );
+  }
+
+  if (isParsing) {
+    return (
+      <div className="container mx-auto px-6 py-12">
+        <div className="flex flex-col items-center justify-center">
+          <div className="w-8 h-8 border-4 border-roi-orange border-t-transparent rounded-full animate-spin mb-4" />
+          <p className="text-roi-gray-light">PDF feldolgozása...</p>
         </div>
       </div>
     );
