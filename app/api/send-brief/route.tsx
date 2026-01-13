@@ -8,14 +8,25 @@ import { generateEmailHtml } from "@/lib/email-template";
 sgMail.setApiKey(process.env.SENDGRID_API_KEY!);
 
 export async function POST(request: Request) {
-  try {
-    const { briefData, clientEmail } = (await request.json()) as {
-      briefData: BriefData;
-      clientEmail: string;
-    };
+  let briefData: BriefData;
+  let clientEmail: string;
 
-    // Generate PDF buffer
-    const pdfBuffer = await renderToBuffer(<BriefPDF data={briefData} />);
+  try {
+    const body = await request.json();
+    briefData = body.briefData;
+    clientEmail = body.clientEmail;
+  } catch {
+    return Response.json(
+      { error: "Érvénytelen kérés" },
+      { status: 400 }
+    );
+  }
+
+  // Generate PDF buffer (JSX outside try/catch for lint compliance)
+  const pdfElement = <BriefPDF data={briefData} />;
+
+  try {
+    const pdfBuffer = await renderToBuffer(pdfElement);
     const pdfBase64 = Buffer.from(pdfBuffer).toString("base64");
 
     // Generate email HTML

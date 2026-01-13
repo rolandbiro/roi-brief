@@ -1,36 +1,99 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# ROI Works Brief
 
-## Getting Started
+AI-támogatott kampány brief gyűjtő rendszer a ROI Works marketing ügynökség számára.
 
-First, run the development server:
+## Funkciók
+
+- 📄 **PDF feltöltés** - Elfogadott ajánlat feltöltése
+- 🤖 **AI asszisztens** - Claude-alapú chatbot a brief adatok összegyűjtéséhez
+- ✏️ **Brief szerkesztés** - Összegyűjtött adatok ellenőrzése és módosítása
+- 📧 **Email küldés** - Brief elküldése PDF melléklettel az ügyfélnek és az ügynökségnek
+
+## Tech Stack
+
+- **Framework**: Next.js 16 (App Router, Turbopack)
+- **Styling**: Tailwind CSS v4
+- **AI**: Claude API (Anthropic)
+- **Email**: SendGrid
+- **PDF**: @react-pdf/renderer
+- **Nyelv**: TypeScript
+
+## Telepítés
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+# Klónozás
+git clone https://github.com/rolandbiro/roi-brief.git
+cd roi-brief
+
+# Függőségek telepítése
+npm install
+
+# Környezeti változók beállítása
+cp .env.example .env.local
+# Szerkeszd a .env.local fájlt a megfelelő értékekkel
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Környezeti változók
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+| Változó | Leírás |
+|---------|--------|
+| `ANTHROPIC_API_KEY` | Claude API kulcs |
+| `SENDGRID_API_KEY` | SendGrid API kulcs |
+| `SENDGRID_FROM_EMAIL` | Küldő email cím |
+| `BRIEF_RECIPIENT_1` | Első címzett (pl. ügynökség) |
+| `BRIEF_RECIPIENT_2` | Második címzett (opcionális) |
+| `NEXT_PUBLIC_APP_URL` | Alkalmazás URL |
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Fejlesztés
 
-## Learn More
+```bash
+# Fejlesztői szerver indítása
+npm run dev
 
-To learn more about Next.js, take a look at the following resources:
+# Build
+npm run build
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+# Production mód
+npm run start
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+# Linting
+npm run lint
+```
 
-## Deploy on Vercel
+## Használat
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+1. Töltsd fel az elfogadott ajánlatot PDF formátumban
+2. Válaszolj az AI asszisztens kérdéseire
+3. Ellenőrizd és szükség esetén módosítsd az összegyűjtött adatokat
+4. Küldd el a kész briefet
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Projekt struktúra
+
+```
+roi-brief/
+├── app/
+│   ├── api/
+│   │   ├── chat/          # Claude API route
+│   │   └── send-brief/    # SendGrid API route
+│   ├── brief/             # Brief chat oldal
+│   └── page.tsx           # Landing page
+├── components/
+│   ├── chat/              # Chat komponensek
+│   ├── BriefEditor.tsx    # Brief szerkesztő
+│   ├── Header.tsx         # Fejléc
+│   ├── Logo.tsx           # ROI Works logo
+│   └── PdfUpload.tsx      # PDF feltöltés
+├── hooks/
+│   └── useChat.ts         # Chat state management
+├── lib/
+│   ├── email-template.ts  # HTML email template
+│   ├── pdf-template.tsx   # PDF generálás
+│   ├── prompts.ts         # AI system prompt
+│   └── utils.ts           # Utility functions
+└── types/
+    └── chat.ts            # TypeScript típusok
+```
+
+## Licensz
+
+Privát - ROI Works belső használatra.

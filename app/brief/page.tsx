@@ -1,15 +1,33 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useChat } from "@/hooks/useChat";
 import { ChatContainer } from "@/components/chat/ChatContainer";
 import { BriefEditor } from "@/components/BriefEditor";
 
+// Helper to read PDF from sessionStorage (uses lazy initializer to avoid effect setState)
+function usePdfData() {
+  const [pdfData] = useState<{ name: string; base64: string } | null>(() => {
+    // This runs only once during initial render (client-side)
+    if (typeof window === "undefined") return null;
+    const stored = sessionStorage.getItem("proposalPdf");
+    if (!stored) return null;
+    try {
+      return JSON.parse(stored);
+    } catch {
+      return null;
+    }
+  });
+
+  return pdfData;
+}
+
 export default function BriefPage() {
   const router = useRouter();
-  const [pdfData, setPdfData] = useState<{ name: string; base64: string } | null>(null);
-  const [showEditor, setShowEditor] = useState(false);
+  const pdfData = usePdfData();
+  const [hideEditor, setHideEditor] = useState(false);
+  const chatStartedRef = useRef(false);
 
   const {
     messages,
@@ -21,37 +39,25 @@ export default function BriefPage() {
     sendMessage,
   } = useChat();
 
-  // Load PDF from sessionStorage on mount
-  useEffect(() => {
-    const stored = sessionStorage.getItem("proposalPdf");
-    if (!stored) {
-      router.push("/");
-      return;
-    }
+  // Derive showEditor from briefData (no effect needed)
+  const showEditor = useMemo(() => {
+    return briefData !== null && !hideEditor;
+  }, [briefData, hideEditor]);
 
-    try {
-      const parsed = JSON.parse(stored);
-      setPdfData(parsed);
-    } catch {
+  // Redirect if no PDF data
+  useEffect(() => {
+    if (pdfData === null) {
       router.push("/");
     }
-  }, [router]);
+  }, [pdfData, router]);
 
-  // Start chat when PDF data is available
+  // Start chat when PDF data is available (only once)
   useEffect(() => {
-    if (pdfData && messages.length === 0) {
-      // Extract text from base64 PDF (simplified - just pass the base64 for now)
-      // In a real implementation, we'd use pdf-parse on the server
+    if (pdfData && !chatStartedRef.current) {
+      chatStartedRef.current = true;
       startChat(pdfData.base64, "");
     }
-  }, [pdfData, messages.length, startChat]);
-
-  // Show editor when brief data is ready
-  useEffect(() => {
-    if (briefData) {
-      setShowEditor(true);
-    }
-  }, [briefData]);
+  }, [pdfData, startChat]);
 
   const handleNewBrief = () => {
     sessionStorage.removeItem("proposalPdf");
@@ -59,10 +65,10 @@ export default function BriefPage() {
   };
 
   const handleBackToChat = () => {
-    setShowEditor(false);
+    setHideEditor(true);
   };
 
-  if (!pdfData) {
+  if (pdfData === null) {
     return (
       <div className="container mx-auto px-6 py-12">
         <div className="flex items-center justify-center">
@@ -135,7 +141,7 @@ export default function BriefPage() {
                 </p>
               </div>
               <button
-                onClick={() => setShowEditor(true)}
+                onClick={() => setHideEditor(false)}
                 className="btn-primary"
               >
                 Brief megtekintése

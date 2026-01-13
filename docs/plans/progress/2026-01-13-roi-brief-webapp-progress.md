@@ -264,42 +264,44 @@
 
 ## Phase 5: Email & PDF Generation
 
-### Task 5.1: Create PDF Generation Utility
+### Task 5.1: Create PDF Generation Utility ✅
 **Subagent:** typescript-expert
 
 **Fájl**: `lib/pdf-template.tsx` (új)
-- [ ] Define PDF styles (colors, typography)
-- [ ] Create Document structure with Page
-- [ ] Add header with logo and date
-- [ ] Add title with campaign name
-- [ ] Create sections for each brief category
-- [ ] Add footer with generation info
+- [x] Define PDF styles (colors, typography)
+- [x] Create Document structure with Page
+- [x] Add header with logo and date
+- [x] Add title with campaign name
+- [x] Create sections for each brief category
+- [x] Add footer with generation info
 
-**Status**: ⏳ PENDING
+**Status**: ✅ COMPLETED
 **Függőségek**: Task 1.4
 **Becsült idő**: 40-50 perc
+**Tényleges idő**: ~10 perc
 
 ---
 
-### Task 5.2: Create Send Brief API Route
+### Task 5.2: Create Send Brief API Route ✅
 **Subagent:** typescript-expert
 
 **Fájl**: `lib/email-template.ts` (új)
-- [ ] Create generateEmailHtml() function
-- [ ] Design responsive HTML email
-- [ ] Include all brief sections
-- [ ] Add ROI Works branding
+- [x] Create generateEmailHtml() function
+- [x] Design responsive HTML email
+- [x] Include all brief sections
+- [x] Add ROI Works branding
 
-**Fájl**: `app/api/send-brief/route.ts` (új)
-- [ ] Initialize SendGrid client
-- [ ] Generate PDF with react-pdf
-- [ ] Create email messages for all recipients
-- [ ] Send emails with PDF attachment
-- [ ] Return success/error response
+**Fájl**: `app/api/send-brief/route.tsx` (új) - Note: .tsx for JSX support
+- [x] Initialize SendGrid client
+- [x] Generate PDF with react-pdf
+- [x] Create email messages for all recipients
+- [x] Send emails with PDF attachment
+- [x] Return success/error response
 
-**Status**: ⏳ PENDING
+**Status**: ✅ COMPLETED
 **Függőségek**: Task 5.1, Task 1.3
 **Becsült idő**: 40-50 perc
+**Tényleges idő**: ~10 perc
 
 ---
 
@@ -363,10 +365,10 @@
 | Phase 2: Core Components | ✅ | 3 | 3/3 |
 | Phase 3: AI Integration | ✅ | 2 | 2/2 |
 | Phase 4: Application Pages | ✅ | 3 | 3/3 |
-| Phase 5: Email & PDF | ⏳ | 2 | 0/2 |
+| Phase 5: Email & PDF | ✅ | 2 | 2/2 |
 | Phase 6: Polish & Testing | ⏳ | 2 | 0/2 |
 
-**Total:** 16 tasks | 12 completed
+**Total:** 16 tasks | 14 completed
 
 **Legend:** ⏳ PENDING | 🔄 IN PROGRESS | ✅ COMPLETED | 🚫 BLOCKED | ⏭️ SKIPPED
 
