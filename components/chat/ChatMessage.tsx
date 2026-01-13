@@ -59,11 +59,19 @@ function formatMarkdown(text: string): ReactNode[] {
   return parts;
 }
 
+// Remove JSON block that's meant for parsing, not display
+function stripBriefJson(content: string): string {
+  return content.replace(/BRIEF_JSON_START[\s\S]*?BRIEF_JSON_END/g, "").trim();
+}
+
 export function ChatMessage({ message }: ChatMessageProps) {
   const isUser = message.role === "user";
 
+  // Strip JSON block from display content
+  const displayContent = stripBriefJson(message.content);
+
   // Format content - split by lines and process each
-  const formattedContent = message.content.split("\n").map((line, i, arr) => (
+  const formattedContent = displayContent.split("\n").map((line, i, arr) => (
     <span key={i}>
       {formatMarkdown(line)}
       {i < arr.length - 1 && <br />}

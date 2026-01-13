@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, KeyboardEvent } from "react";
+import { useState, useRef, KeyboardEvent } from "react";
 
 interface ChatInputProps {
   onSend: (message: string) => void;
@@ -14,11 +14,13 @@ export function ChatInput({
   placeholder = "Írja be válaszát...",
 }: ChatInputProps) {
   const [input, setInput] = useState("");
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   const handleSend = () => {
     if (input.trim() && !disabled) {
       onSend(input.trim());
       setInput("");
+      textareaRef.current?.focus();
     }
   };
 
@@ -32,6 +34,7 @@ export function ChatInput({
   return (
     <div className="flex gap-3 p-4 bg-roi-gray-darker rounded-xl">
       <textarea
+        ref={textareaRef}
         value={input}
         onChange={(e) => setInput(e.target.value)}
         onKeyDown={handleKeyDown}
