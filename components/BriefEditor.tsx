@@ -61,32 +61,48 @@ export function BriefEditor({ initialData, onBack }: BriefEditorProps) {
   if (success) {
     return (
       <div className="container mx-auto px-6 py-12">
-        <div className="max-w-2xl mx-auto text-center">
-          <div className="w-20 h-20 bg-green-500/20 rounded-full flex items-center justify-center mx-auto mb-6">
-            <svg
-              className="w-10 h-10 text-green-500"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M5 13l4 4L19 7"
-              />
-            </svg>
+        <div className="max-w-2xl mx-auto text-center animate-fade-in-up">
+          {/* Success animation */}
+          <div className="relative w-24 h-24 mx-auto mb-8">
+            <div className="absolute inset-0 bg-green-500/20 rounded-full blur-xl animate-pulse" />
+            <div className="relative w-24 h-24 bg-gradient-to-br from-green-500 to-green-600 rounded-full flex items-center justify-center shadow-lg shadow-green-500/30">
+              <svg
+                className="w-12 h-12 text-white animate-scale-in"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2.5}
+                  d="M5 13l4 4L19 7"
+                />
+              </svg>
+            </div>
           </div>
-          <h1 className="text-3xl font-black mb-4">
+
+          <h1 className="text-4xl font-black mb-4">
             Brief <span className="text-roi-orange">elküldve!</span>
           </h1>
-          <p className="text-roi-gray-light mb-8">
+          <p className="text-xl text-roi-gray-light mb-8 leading-relaxed">
             A kampány brief sikeresen elküldve a megadott email címekre.
+            <br />
             Hamarosan felvesszük Önnel a kapcsolatot.
           </p>
-          <button onClick={() => router.push("/")} className="btn-primary">
-            Új brief indítása
-          </button>
+
+          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <button onClick={() => router.push("/")} className="btn-primary text-lg px-8 py-4">
+              Új brief indítása
+            </button>
+          </div>
+
+          {/* Decorative elements */}
+          <div className="mt-12 flex justify-center gap-2">
+            <div className="w-2 h-2 bg-roi-orange rounded-full animate-bounce" style={{ animationDelay: "0ms" }} />
+            <div className="w-2 h-2 bg-roi-orange rounded-full animate-bounce" style={{ animationDelay: "100ms" }} />
+            <div className="w-2 h-2 bg-roi-orange rounded-full animate-bounce" style={{ animationDelay: "200ms" }} />
+          </div>
         </div>
       </div>
     );
@@ -95,12 +111,13 @@ export function BriefEditor({ initialData, onBack }: BriefEditorProps) {
   return (
     <div className="container mx-auto px-6 py-8">
       <div className="max-w-4xl mx-auto">
-        <div className="flex items-center justify-between mb-8">
+        {/* Header with animation */}
+        <div className="flex items-center justify-between mb-8 animate-fade-in-up">
           <div>
             <h1 className="text-2xl font-black">
               Brief <span className="text-roi-orange">ellenőrzés</span>
             </h1>
-            <p className="text-sm text-roi-gray-light">
+            <p className="text-sm text-roi-gray-light mt-1">
               Ellenőrizze és szükség esetén módosítsa az adatokat
             </p>
           </div>
@@ -111,8 +128,11 @@ export function BriefEditor({ initialData, onBack }: BriefEditorProps) {
 
         <div className="space-y-6">
           {/* Company Section */}
-          <section className="card">
-            <h2 className="text-xl font-bold mb-4 text-roi-orange">Cégadatok</h2>
+          <section className="card border border-transparent hover:border-roi-gray-light/10 animate-fade-in-up stagger-1">
+            <h2 className="text-xl font-bold mb-4 text-roi-orange flex items-center gap-2">
+              <span className="w-8 h-8 rounded-lg bg-roi-orange/20 flex items-center justify-center text-sm">1</span>
+              Cégadatok
+            </h2>
             <div className="grid md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm text-roi-gray-light mb-1">Cégnév</label>
@@ -157,8 +177,11 @@ export function BriefEditor({ initialData, onBack }: BriefEditorProps) {
           </section>
 
           {/* Campaign Section */}
-          <section className="card">
-            <h2 className="text-xl font-bold mb-4 text-roi-orange">Kampány</h2>
+          <section className="card border border-transparent hover:border-roi-gray-light/10 animate-fade-in-up stagger-2">
+            <h2 className="text-xl font-bold mb-4 text-roi-orange flex items-center gap-2">
+              <span className="w-8 h-8 rounded-lg bg-roi-orange/20 flex items-center justify-center text-sm">2</span>
+              Kampány
+            </h2>
             <div className="space-y-4">
               <div className="grid md:grid-cols-2 gap-4">
                 <div>
@@ -211,8 +234,11 @@ export function BriefEditor({ initialData, onBack }: BriefEditorProps) {
           </section>
 
           {/* Target Audience Section */}
-          <section className="card">
-            <h2 className="text-xl font-bold mb-4 text-roi-orange">Célcsoport</h2>
+          <section className="card border border-transparent hover:border-roi-gray-light/10 animate-fade-in-up stagger-3">
+            <h2 className="text-xl font-bold mb-4 text-roi-orange flex items-center gap-2">
+              <span className="w-8 h-8 rounded-lg bg-roi-orange/20 flex items-center justify-center text-sm">3</span>
+              Célcsoport
+            </h2>
             <div className="space-y-4">
               <div className="grid md:grid-cols-3 gap-4">
                 <div>
@@ -265,8 +291,11 @@ export function BriefEditor({ initialData, onBack }: BriefEditorProps) {
           </section>
 
           {/* Channels Section */}
-          <section className="card">
-            <h2 className="text-xl font-bold mb-4 text-roi-orange">Csatornák</h2>
+          <section className="card border border-transparent hover:border-roi-gray-light/10 animate-fade-in-up stagger-4">
+            <h2 className="text-xl font-bold mb-4 text-roi-orange flex items-center gap-2">
+              <span className="w-8 h-8 rounded-lg bg-roi-orange/20 flex items-center justify-center text-sm">4</span>
+              Csatornák
+            </h2>
             <div>
               <label className="block text-sm text-roi-gray-light mb-1">Hirdetési csatornák (vesszővel elválasztva)</label>
               <input
@@ -279,8 +308,11 @@ export function BriefEditor({ initialData, onBack }: BriefEditorProps) {
           </section>
 
           {/* Timeline Section */}
-          <section className="card">
-            <h2 className="text-xl font-bold mb-4 text-roi-orange">Időzítés</h2>
+          <section className="card border border-transparent hover:border-roi-gray-light/10 animate-fade-in-up stagger-5">
+            <h2 className="text-xl font-bold mb-4 text-roi-orange flex items-center gap-2">
+              <span className="w-8 h-8 rounded-lg bg-roi-orange/20 flex items-center justify-center text-sm">5</span>
+              Időzítés
+            </h2>
             <div className="grid md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm text-roi-gray-light mb-1">Kezdés</label>
@@ -304,8 +336,11 @@ export function BriefEditor({ initialData, onBack }: BriefEditorProps) {
           </section>
 
           {/* Budget Section */}
-          <section className="card">
-            <h2 className="text-xl font-bold mb-4 text-roi-orange">Költségvetés</h2>
+          <section className="card border border-transparent hover:border-roi-gray-light/10 animate-fade-in-up" style={{ animationDelay: "0.6s", opacity: 0 }}>
+            <h2 className="text-xl font-bold mb-4 text-roi-orange flex items-center gap-2">
+              <span className="w-8 h-8 rounded-lg bg-roi-orange/20 flex items-center justify-center text-sm">6</span>
+              Költségvetés
+            </h2>
             <div>
               <label className="block text-sm text-roi-gray-light mb-1">Teljes büdzsé</label>
               <input
@@ -318,8 +353,11 @@ export function BriefEditor({ initialData, onBack }: BriefEditorProps) {
           </section>
 
           {/* Competitors Section */}
-          <section className="card">
-            <h2 className="text-xl font-bold mb-4 text-roi-orange">Versenytársak</h2>
+          <section className="card border border-transparent hover:border-roi-gray-light/10 animate-fade-in-up" style={{ animationDelay: "0.7s", opacity: 0 }}>
+            <h2 className="text-xl font-bold mb-4 text-roi-orange flex items-center gap-2">
+              <span className="w-8 h-8 rounded-lg bg-roi-orange/20 flex items-center justify-center text-sm">7</span>
+              Versenytársak
+            </h2>
             <div>
               <label className="block text-sm text-roi-gray-light mb-1">Versenytársak (vesszővel elválasztva)</label>
               <input
@@ -332,8 +370,11 @@ export function BriefEditor({ initialData, onBack }: BriefEditorProps) {
           </section>
 
           {/* Notes Section */}
-          <section className="card">
-            <h2 className="text-xl font-bold mb-4 text-roi-orange">Megjegyzések</h2>
+          <section className="card border border-transparent hover:border-roi-gray-light/10 animate-fade-in-up" style={{ animationDelay: "0.8s", opacity: 0 }}>
+            <h2 className="text-xl font-bold mb-4 text-roi-orange flex items-center gap-2">
+              <span className="w-8 h-8 rounded-lg bg-roi-orange/20 flex items-center justify-center text-sm">8</span>
+              Megjegyzések
+            </h2>
             <textarea
               value={briefData.notes}
               onChange={(e) => updateField("notes", e.target.value)}
@@ -343,8 +384,13 @@ export function BriefEditor({ initialData, onBack }: BriefEditorProps) {
           </section>
 
           {/* Email for sending */}
-          <section className="card border-2 border-roi-orange">
-            <h2 className="text-xl font-bold mb-4 text-roi-orange">Küldés</h2>
+          <section className="card border-2 border-roi-orange animate-fade-in-up relative overflow-hidden" style={{ animationDelay: "0.9s", opacity: 0 }}>
+            {/* Decorative glow */}
+            <div className="absolute -top-10 -right-10 w-32 h-32 bg-roi-orange/10 rounded-full blur-2xl" />
+            <h2 className="text-xl font-bold mb-4 text-roi-orange flex items-center gap-2 relative">
+              <span className="w-8 h-8 rounded-lg bg-roi-orange flex items-center justify-center text-sm text-black">✓</span>
+              Küldés
+            </h2>
             <div className="mb-4">
               <label className="block text-sm text-roi-gray-light mb-1">
                 Az Ön email címe (ide küldjük a brief másolatát)
