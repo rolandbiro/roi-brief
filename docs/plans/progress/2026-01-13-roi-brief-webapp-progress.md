@@ -80,75 +80,78 @@
 
 ## Phase 2: Core Components & Layout
 
-### Task 2.1: Create Main Layout with ROI Works Header
+### Task 2.1: Create Main Layout with ROI Works Header ✅
 **Subagent:** nextjs-app-router-specialist
 
 **Fájl**: `components/Logo.tsx` (új)
-- [ ] Create SVG logo component
-- [ ] Support className prop for sizing
+- [x] Create SVG logo component
+- [x] Support className prop for sizing
 
 **Fájl**: `components/Header.tsx` (új)
-- [ ] Create fixed header with blur backdrop
-- [ ] Include Logo component
-- [ ] Add border bottom styling
+- [x] Create fixed header with blur backdrop
+- [x] Include Logo component
+- [x] Add border bottom styling
 
 **Fájl**: `app/layout.tsx` (módosítás)
-- [ ] Add Header component
-- [ ] Set page title and metadata
-- [ ] Add pt-20 to main for header spacing
+- [x] Add Header component
+- [x] Set page title and metadata
+- [x] Add pt-20 to main for header spacing
 
-**Status**: ⏳ PENDING
+**Status**: ✅ COMPLETED
 **Függőségek**: Task 1.2
 **Becsült idő**: 20-30 perc
+**Tényleges idő**: ~5 perc
 
 ---
 
-### Task 2.2: Create PDF Upload Component
+### Task 2.2: Create PDF Upload Component ✅
 **Subagent:** nextjs-app-router-specialist
 
 **Fájl**: `lib/utils.ts` (új)
-- [ ] Create cn() utility function
-- [ ] Create fileToBase64() helper
+- [x] Create cn() utility function
+- [x] Create fileToBase64() helper
 
 **Fájl**: `components/PdfUpload.tsx` (új)
-- [ ] Implement drag-and-drop zone
-- [ ] Add file type validation (PDF only)
-- [ ] Add file size validation (max 10MB)
-- [ ] Show upload success state
-- [ ] Handle file reading to base64
+- [x] Implement drag-and-drop zone
+- [x] Add file type validation (PDF only)
+- [x] Add file size validation (max 10MB)
+- [x] Show upload success state
+- [x] Handle file reading to base64
 
-**Status**: ⏳ PENDING
+**Status**: ✅ COMPLETED
 **Függőségek**: Task 1.4
 **Becsült idő**: 30-40 perc
+**Tényleges idő**: ~5 perc
 
 ---
 
-### Task 2.3: Create Chat UI Components
+### Task 2.3: Create Chat UI Components ✅
 **Subagent:** nextjs-app-router-specialist
 
 **Fájl**: `types/chat.ts` (új)
-- [ ] Define Message interface
-- [ ] Define BriefData interface with all fields
+- [x] Define Message interface
+- [x] Define BriefData interface with all fields
 
 **Fájl**: `components/chat/ChatMessage.tsx` (új)
-- [ ] Create message bubble component
-- [ ] Style differently for user vs assistant
-- [ ] Add AI avatar for assistant messages
+- [x] Create message bubble component
+- [x] Style differently for user vs assistant
+- [x] Add AI avatar for assistant messages
 
 **Fájl**: `components/chat/ChatInput.tsx` (új)
-- [ ] Create textarea with send button
-- [ ] Handle Enter key for submit
-- [ ] Add disabled state during loading
+- [x] Create textarea with send button
+- [x] Handle Enter key for submit
+- [x] Add disabled state during loading
 
 **Fájl**: `components/chat/ChatContainer.tsx` (új)
-- [ ] Create scrollable message container
-- [ ] Auto-scroll on new messages
-- [ ] Show loading indicator
-- [ ] Handle streaming content display
+- [x] Create scrollable message container
+- [x] Auto-scroll on new messages
+- [x] Show loading indicator
+- [x] Handle streaming content display
 
-**Status**: ⏳ PENDING
+**Status**: ✅ COMPLETED
 **Függőségek**: Task 1.2
 **Becsült idő**: 40-60 perc
+**Tényleges idő**: ~8 perc
 
 ---
 
@@ -352,13 +355,13 @@
 | Phase | Status | Tasks | Completed |
 |-------|--------|-------|-----------|
 | Phase 1: Project Setup | ✅ | 4 | 4/4 |
-| Phase 2: Core Components | ⏳ | 3 | 0/3 |
+| Phase 2: Core Components | ✅ | 3 | 3/3 |
 | Phase 3: AI Integration | ⏳ | 2 | 0/2 |
 | Phase 4: Application Pages | ⏳ | 3 | 0/3 |
 | Phase 5: Email & PDF | ⏳ | 2 | 0/2 |
 | Phase 6: Polish & Testing | ⏳ | 2 | 0/2 |
 
-**Total:** 16 tasks | 4 completed
+**Total:** 16 tasks | 7 completed
 
 **Legend:** ⏳ PENDING | 🔄 IN PROGRESS | ✅ COMPLETED | 🚫 BLOCKED | ⏭️ SKIPPED
 
@@ -375,9 +378,9 @@
 ### Session 2 - 2026-01-13
 - Started: ~14:40
 - Ended: -
-- Tasks completed: 1.1, 1.2, 1.3, 1.4 (Phase 1 complete!)
+- Tasks completed: 1.1-1.4 (Phase 1), 2.1-2.3 (Phase 2) = 7 tasks
 - Tasks in progress: -
-- Notes: Created private GitHub repo (https://github.com/rolandbiro/roi-brief), initialized Next.js 16.1.1 with Tailwind v4, configured ROI Works brand colors, set up environment variables, installed all dependencies.
+- Notes: Created private GitHub repo, initialized Next.js 16.1.1 with Tailwind v4, configured ROI Works brand colors, created Header/Logo, PdfUpload, and Chat UI components.
 
 ---
 
