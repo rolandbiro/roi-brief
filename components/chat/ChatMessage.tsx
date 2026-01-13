@@ -60,8 +60,13 @@ function formatMarkdown(text: string): ReactNode[] {
 }
 
 // Remove JSON block that's meant for parsing, not display
+// Handles both complete blocks and partial blocks during streaming
 function stripBriefJson(content: string): string {
-  return content.replace(/BRIEF_JSON_START[\s\S]*?BRIEF_JSON_END/g, "").trim();
+  // Remove complete JSON blocks
+  let result = content.replace(/BRIEF_JSON_START[\s\S]*?BRIEF_JSON_END/g, "");
+  // Remove partial JSON block during streaming (START tag without END)
+  result = result.replace(/BRIEF_JSON_START[\s\S]*$/g, "");
+  return result.trim();
 }
 
 export function ChatMessage({ message }: ChatMessageProps) {

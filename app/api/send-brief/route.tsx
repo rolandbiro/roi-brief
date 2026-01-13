@@ -62,10 +62,26 @@ export async function POST(request: Request) {
     await Promise.all(messages.map((msg) => sgMail.send(msg)));
 
     return Response.json({ success: true });
-  } catch (error) {
+  } catch (error: unknown) {
     console.error("Send brief error:", error);
+
+    // Check for SendGrid specific errors
+    const sgError = error as { code?: number; message?: string };
+    if (sgError.code === 401) {
+      return Response.json(
+        { error: "Email küldési hiba: érvénytelen API kulcs. Kérjük, ellenőrizze a SendGrid konfigurációt." },
+        { status: 500 }
+      );
+    }
+    if (sgError.code === 403) {
+      return Response.json(
+        { error: "Email küldési hiba: a feladó email cím nincs hitelesítve a SendGrid-ben." },
+        { status: 500 }
+      );
+    }
+
     return Response.json(
-      { error: "Hiba történt a brief küldése során" },
+      { error: "Hiba történt a brief küldése során. Kérjük, próbálja újra később." },
       { status: 500 }
     );
   }
