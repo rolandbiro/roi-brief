@@ -1,8 +1,8 @@
 "use client";
 
 import { useState, useCallback } from "react";
-import { Message, BriefData } from "@/types/chat";
-import { createInitialMessage } from "@/lib/prompts";
+import { Message } from "@/types/chat";
+import { BriefData } from "@/types/brief";
 
 export function useChat() {
   const [messages, setMessages] = useState<Message[]>([]);
@@ -11,22 +11,13 @@ export function useChat() {
   const [briefData, setBriefData] = useState<BriefData | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  const checkForBriefData = (content: string) => {
-    const jsonMatch = content.match(/BRIEF_JSON_START\s*([\s\S]*?)\s*BRIEF_JSON_END/);
-    if (jsonMatch) {
-      try {
-        const briefJson = JSON.parse(jsonMatch[1]);
-        setBriefData(briefJson);
-      } catch (err) {
-        console.error("Failed to parse brief JSON:", err);
-      }
-    }
-  };
-
-  const processStream = async (response: Response): Promise<string> => {
+  const processStream = async (
+    response: Response
+  ): Promise<{ content: string; briefData: BriefData | null }> => {
     const reader = response.body?.getReader();
     const decoder = new TextDecoder();
     let fullContent = "";
+    let extractedBriefData: BriefData | null = null;
 
     while (reader) {
       const { done, value } = await reader.read();
@@ -45,6 +36,10 @@ export function useChat() {
               fullContent += parsed.text;
               setStreamingContent(fullContent);
             }
+            if (parsed.briefData) {
+              extractedBriefData = parsed.briefData;
+              setBriefData(parsed.briefData);
+            }
           } catch {
             // Ignore parse errors for incomplete chunks
           }
@@ -52,48 +47,40 @@ export function useChat() {
       }
     }
 
-    return fullContent;
+    return { content: fullContent, briefData: extractedBriefData };
   };
 
-  const startChat = useCallback(async (pdfBase64: string, pdfText: string) => {
+  const startChat = useCallback(async () => {
     setIsLoading(true);
     setError(null);
-
-    const initialUserMessage: Message = {
-      id: crypto.randomUUID(),
-      role: "user",
-      content: createInitialMessage(pdfText || "Az ajánlat tartalma nem volt kiolvasható, de az ügyfél szeretné kitölteni a briefet."),
-      timestamp: new Date(),
-    };
-
-    setMessages([initialUserMessage]);
 
     try {
       const response = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          messages: [{ role: "user", content: initialUserMessage.content }],
+          messages: [{ role: "user", content: "Szia!" }],
         }),
       });
 
       if (!response.ok) throw new Error("Failed to start chat");
 
-      const fullContent = await processStream(response);
+      const { content, briefData: newBriefData } =
+        await processStream(response);
 
-      // Add assistant message
       const assistantMessage: Message = {
         id: crypto.randomUUID(),
         role: "assistant",
-        content: fullContent,
+        content,
         timestamp: new Date(),
       };
 
-      setMessages((prev) => [...prev, assistantMessage]);
+      setMessages([assistantMessage]);
       setStreamingContent("");
 
-      // Check if brief data is in the response
-      checkForBriefData(fullContent);
+      if (newBriefData) {
+        setBriefData(newBriefData);
+      }
     } catch (err) {
       setError("Hiba történt a chat indítása során. Kérjük, próbálja újra.");
       console.error(err);
@@ -102,21 +89,68 @@ export function useChat() {
     }
   }, []);
 
-  const sendMessage = useCallback(async (content: string) => {
+  const sendMessage = useCallback(
+    async (content: string) => {
+      setIsLoading(true);
+      setError(null);
+
+      const userMessage: Message = {
+        id: crypto.randomUUID(),
+        role: "user",
+        content,
+        timestamp: new Date(),
+      };
+
+      setMessages((prev) => [...prev, userMessage]);
+
+      try {
+        const allMessages = [...messages, userMessage].map((m) => ({
+          role: m.role,
+          content: m.content,
+        }));
+
+        const response = await fetch("/api/chat", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ messages: allMessages }),
+        });
+
+        if (!response.ok) throw new Error("Failed to send message");
+
+        const { content: responseContent, briefData: newBriefData } =
+          await processStream(response);
+
+        const assistantMessage: Message = {
+          id: crypto.randomUUID(),
+          role: "assistant",
+          content: responseContent,
+          timestamp: new Date(),
+        };
+
+        setMessages((prev) => [...prev, assistantMessage]);
+        setStreamingContent("");
+
+        if (newBriefData) {
+          setBriefData(newBriefData);
+        }
+      } catch (err) {
+        setError(
+          "Hiba történt az üzenet küldése során. Kérjük, próbálja újra."
+        );
+        console.error(err);
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [messages]
+  );
+
+  const requestExtraction = useCallback(async () => {
     setIsLoading(true);
     setError(null);
 
-    const userMessage: Message = {
-      id: crypto.randomUUID(),
-      role: "user",
-      content,
-      timestamp: new Date(),
-    };
-
-    setMessages((prev) => [...prev, userMessage]);
-
     try {
-      const allMessages = [...messages, userMessage].map((m) => ({
+      const allMessages = messages.map((m) => ({
         role: m.role,
         content: m.content,
       }));
@@ -124,26 +158,35 @@ export function useChat() {
       const response = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ messages: allMessages }),
+        body: JSON.stringify({
+          messages: allMessages,
+          extractBrief: true,
+        }),
       });
 
-      if (!response.ok) throw new Error("Failed to send message");
+      if (!response.ok) throw new Error("Failed to extract brief");
 
-      const fullContent = await processStream(response);
+      const { content, briefData: newBriefData } =
+        await processStream(response);
 
-      const assistantMessage: Message = {
-        id: crypto.randomUUID(),
-        role: "assistant",
-        content: fullContent,
-        timestamp: new Date(),
-      };
+      if (content) {
+        const assistantMessage: Message = {
+          id: crypto.randomUUID(),
+          role: "assistant",
+          content,
+          timestamp: new Date(),
+        };
+        setMessages((prev) => [...prev, assistantMessage]);
+        setStreamingContent("");
+      }
 
-      setMessages((prev) => [...prev, assistantMessage]);
-      setStreamingContent("");
-
-      checkForBriefData(fullContent);
+      if (newBriefData) {
+        setBriefData(newBriefData);
+      }
     } catch (err) {
-      setError("Hiba történt az üzenet küldése során. Kérjük, próbálja újra.");
+      setError(
+        "Hiba történt a brief összeállítása során. Kérjük, próbálja újra."
+      );
       console.error(err);
     } finally {
       setIsLoading(false);
@@ -159,5 +202,6 @@ export function useChat() {
     startChat,
     sendMessage,
     setBriefData,
+    requestExtraction,
   };
 }
