@@ -1,6 +1,5 @@
 import Anthropic from "@anthropic-ai/sdk";
-import { zodOutputFormat } from "@anthropic-ai/sdk/helpers/zod";
-import { composeSystemPrompt, EXTRACTION_PROMPT } from "@/lib/prompts";
+import { composeSystemPrompt } from "@/lib/prompts";
 import { TOOL_DEFINITIONS, handleToolExecution } from "@/lib/tools";
 import type { BriefState } from "@/lib/tools";
 import { createInitialBriefState } from "@/lib/tools";
@@ -24,6 +23,23 @@ export async function POST(request: Request) {
       await request.json();
 
     let currentBriefState: BriefState = briefState || createInitialBriefState();
+
+    // Extract brief from tool-collected state — no Claude call needed
+    if (extractBrief) {
+      const briefData = {
+        ...currentBriefState.briefData,
+        campaign_types: currentBriefState.confirmedTypes.length > 0
+          ? currentBriefState.confirmedTypes
+          : currentBriefState.detectedTypes,
+      };
+
+      const parsed = BriefDataSchema.safeParse(briefData);
+      if (parsed.success) {
+        return Response.json({ briefData: parsed.data });
+      }
+      // Fallback: return unvalidated data (optional fields may be missing)
+      return Response.json({ briefData });
+    }
 
     const encoder = new TextEncoder();
     const readableStream = new ReadableStream({
@@ -192,48 +208,6 @@ export async function POST(request: Request) {
                 `data: ${JSON.stringify({ quickReplies: pendingQuickReplies })}\n\n`
               )
             );
-          }
-
-          // Brief extraction (separate non-streaming call, after agentic loop)
-          if (extractBrief) {
-            try {
-              // Build extraction context with tool-collected data
-              const extractionContext =
-                Object.keys(currentBriefState.briefData).length > 0
-                  ? `\n\nA tool use által eddig gyűjtött adatok:\n${JSON.stringify(currentBriefState.briefData, null, 2)}\n\nFelismert kampánytípusok: ${currentBriefState.confirmedTypes.length > 0 ? currentBriefState.confirmedTypes.join(", ") : currentBriefState.detectedTypes.join(", ")}`
-                  : "";
-
-              const extractionResponse = await anthropic.messages.parse({
-                model: "claude-sonnet-4-20250514",
-                max_tokens: 4096,
-                system: EXTRACTION_PROMPT + extractionContext,
-                messages: [
-                  ...messages.map((msg) => ({
-                    role: msg.role as "user" | "assistant",
-                    content: msg.content,
-                  })),
-                  {
-                    role: "user" as const,
-                    content:
-                      "Kérlek, foglald össze a brief adatokat a beszélgetés alapján.",
-                  },
-                ],
-                output_config: {
-                  format: zodOutputFormat(BriefDataSchema),
-                },
-              });
-
-              if (extractionResponse.parsed_output) {
-                controller.enqueue(
-                  encoder.encode(
-                    `data: ${JSON.stringify({ briefData: extractionResponse.parsed_output })}\n\n`
-                  )
-                );
-              }
-            } catch (extractionError) {
-              console.error("Brief extraction failed:", extractionError);
-              // Don't break the stream -- extraction is optional
-            }
           }
 
           controller.enqueue(encoder.encode("data: [DONE]\n\n"));

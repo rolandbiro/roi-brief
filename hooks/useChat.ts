@@ -182,16 +182,11 @@ export function useChat() {
     setError(null);
 
     try {
-      const allMessages = messages.map((m) => ({
-        role: m.role,
-        content: m.content,
-      }));
-
       const response = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          messages: allMessages,
+          messages: [],
           extractBrief: true,
           briefState: briefStateRef.current,
         }),
@@ -199,19 +194,7 @@ export function useChat() {
 
       if (!response.ok) throw new Error("Failed to extract brief");
 
-      const { content, briefData: newBriefData } =
-        await processStream(response);
-
-      if (content) {
-        const assistantMessage: Message = {
-          id: crypto.randomUUID(),
-          role: "assistant",
-          content,
-          timestamp: new Date(),
-        };
-        setMessages((prev) => [...prev, assistantMessage]);
-        setStreamingContent("");
-      }
+      const { briefData: newBriefData } = await response.json();
 
       if (newBriefData) {
         setBriefData(newBriefData);
@@ -224,7 +207,7 @@ export function useChat() {
     } finally {
       setIsLoading(false);
     }
-  }, [messages]);
+  }, []);
 
   const handleQuickReply = useCallback(
     (value: string | null) => {
