@@ -5,23 +5,23 @@
 See: .planning/PROJECT.md (updated 2026-02-10)
 
 **Core value:** Az AI asszisztens kampánytípustól függően releváns, szakmai mélységű kérdéseket tesz fel — adaptív kikérdezés, ami profi briefté áll össze.
-**Current focus:** Phase 3 in progress — BriefEditor read-only + email/send-brief
+**Current focus:** Phase 3 in progress — final integration (03-04)
 
 ## Current Position
 
 Phase: 3 of 3 (Dynamic Report & Branding)
-Plan: 3 of 4 in current phase (03-01, 03-02 complete)
+Plan: 4 of 4 in current phase (03-01, 03-02, 03-03 complete)
 Status: Executing Phase 3
-Last activity: 2026-02-10 — Completed 03-01 (Dynamic section helper + read-only BriefEditor)
+Last activity: 2026-02-10 — Completed 03-03 (PDF download + email template flat schema rewrite)
 
-Progress: [███████░░░] 75% (3/4 plans in Phase 3)
+Progress: [████████░░] 75% (3/4 plans in Phase 3)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 9
+- Total plans completed: 10
 - Average duration: 4min
-- Total execution time: 39min
+- Total execution time: 42min
 
 **By Phase:**
 
@@ -29,10 +29,10 @@ Progress: [███████░░░] 75% (3/4 plans in Phase 3)
 |-------|-------|-------|----------|
 | 01 | 3/3 | 12min | 4min |
 | 02 | 3/3 | 14min | 5min |
-| 03 | 3/4 | 13min | 4min |
+| 03 | 3/4 | 16min | 5min |
 
 **Recent Trend:**
-- Last 5 plans: 02-02 (2min), 02-03 (8min), 03-02 (5min), 03-01 (3min)
+- Last 5 plans: 02-03 (8min), 03-02 (5min), 03-01 (3min), 03-03 (3min)
 - Trend: stable
 
 *Updated after each plan completion*
@@ -70,6 +70,9 @@ Recent decisions affecting current work:
 - 03-02: PdfLogo uses SVG Path only (no SVG Text) — @react-pdf/renderer SVG Text + custom font problémás
 - 03-02: Section definitions duplicated for PDF (View/Text) vs HTML — separate render targets
 - 03-02: Executive Summary section at top of PDF with key fields
+- 03-03: Email recipients: only BRIEF_RECIPIENT_1/2 — clientEmail removed from recipient list, shown in email body
+- 03-03: Section definitions duplicated for email template (HTML strings) — same pattern as PDF
+- 03-03: generateEmailHtml accepts optional clientEmail for team reference row
 
 ### Pending Todos
 
@@ -81,10 +84,10 @@ None.
 - Phase 3: @react-pdf/renderer conditional rendering bug — tesztelés szükséges (research flag)
 - ~~Pre-existing TS errors in pdf-template~~ — RESOLVED (03-02 flat schema rewrite)
 - ~~Pre-existing TS errors in BriefEditor~~ — RESOLVED (03-01 full rewrite)
-- Pre-existing TS errors in send-brief, email-template — remaining Phase 3 scope
+- ~~Pre-existing TS errors in send-brief, email-template~~ — RESOLVED (03-03 flat schema rewrite)
 
 ## Session Continuity
 
 Last session: 2026-02-10
-Stopped at: Completed 03-01-PLAN.md (Dynamic section helper + read-only BriefEditor)
-Resume file: .planning/phases/03-dynamic-report-branding/03-01-SUMMARY.md
+Stopped at: Completed 03-03-PLAN.md (PDF download + email template flat schema rewrite)
+Resume file: .planning/phases/03-dynamic-report-branding/03-03-SUMMARY.md
