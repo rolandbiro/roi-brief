@@ -5,6 +5,7 @@ import { ReactNode } from "react";
 interface ChatMessageProps {
   message: Message;
   isNew?: boolean;
+  skipAnimation?: boolean;
 }
 
 // Simple markdown parser for bold (**text**) and italic (*text*)
@@ -60,7 +61,7 @@ function formatMarkdown(text: string): ReactNode[] {
   return parts;
 }
 
-export function ChatMessage({ message }: ChatMessageProps) {
+export function ChatMessage({ message, skipAnimation }: ChatMessageProps) {
   const isUser = message.role === "user";
   const displayContent = message.content.trim();
 
@@ -77,7 +78,8 @@ export function ChatMessage({ message }: ChatMessageProps) {
   return (
     <div
       className={cn(
-        "flex w-full mb-4 animate-fade-in-up",
+        "flex w-full mb-4",
+        !skipAnimation && "animate-fade-in-up",
         isUser ? "justify-end" : "justify-start"
       )}
       style={{ animationDuration: "0.3s" }}

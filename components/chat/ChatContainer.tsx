@@ -31,8 +31,12 @@ export function ChatContainer({
         {/* Filter out user messages that contain system prompts */}
         {messages
           .filter((m) => !(m.role === "user" && m.content.includes("Az ügyfél feltöltötte")))
-          .map((message) => (
-            <ChatMessage key={message.id} message={message} />
+          .map((message, index, arr) => (
+            <ChatMessage
+              key={message.id}
+              message={message}
+              skipAnimation={!streamingContent && index === arr.length - 1 && message.role === "assistant"}
+            />
           ))}
 
         {/* Streaming message */}
@@ -44,6 +48,7 @@ export function ChatContainer({
               content: streamingContent,
               timestamp: new Date(),
             }}
+            skipAnimation
           />
         )}
 
