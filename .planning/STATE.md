@@ -10,27 +10,27 @@ See: .planning/PROJECT.md (updated 2026-02-10)
 ## Current Position
 
 Phase: 1 of 3 (Type System & Foundation)
-Plan: 0 of TBD in current phase
-Status: Ready to plan
-Last activity: 2026-02-10 — Roadmap created
+Plan: 1 of 3 in current phase (01-01 complete)
+Status: Executing
+Last activity: 2026-02-10 — Plan 01-01 complete (Zod schemas + modular prompts)
 
-Progress: [░░░░░░░░░░] 0%
+Progress: [███░░░░░░░] 33% (1/3 plans in Phase 1)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 0
-- Average duration: -
-- Total execution time: 0 hours
+- Total plans completed: 1
+- Average duration: 3min
+- Total execution time: 3min
 
 **By Phase:**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
-| - | - | - | - |
+| 01 | 1/3 | 3min | 3min |
 
 **Recent Trend:**
-- Last 5 plans: -
+- Last 5 plans: 01-01 (3min)
 - Trend: -
 
 *Updated after each plan completion*
@@ -45,6 +45,9 @@ Recent decisions affecting current work:
 - Roadmap: 3 fázis (quick depth) — Foundation, Engine, Report
 - Research: Zod v4 + Anthropic SDK ^0.74.0 upgrade szükséges
 - Research: Tool use pattern (classify_campaign, update_brief) a regex helyett
+- 01-01: campaign_type top-level (not nested) for z.discriminatedUnion compatibility
+- 01-01: Type-specific fields in nested objects (media_specific, etc.) for clean separation
+- 01-01: composeSystemPrompt accepts CampaignType[] — empty array returns BASE_PROMPT only
 
 ### Pending Todos
 
@@ -58,5 +61,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-10
-Stopped at: Roadmap created, ready to plan Phase 1
-Resume file: None
+Stopped at: Completed 01-01-PLAN.md (Zod schemas + modular prompts)
+Resume file: .planning/phases/01-type-system-foundation/01-01-SUMMARY.md
