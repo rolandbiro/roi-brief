@@ -1,4 +1,4 @@
-import type { BriefState, ClassifyCampaignInput, UpdateBriefInput, ToolResult } from "./types";
+import type { BriefState, ClassifyCampaignInput, UpdateBriefInput, SuggestQuickRepliesInput, ToolResult } from "./types";
 
 function deepSet(obj: Record<string, unknown>, path: string, value: unknown): Record<string, unknown> {
   const result = { ...obj };
@@ -46,11 +46,18 @@ export function handleToolExecution(
       const { field, value } = input as UpdateBriefInput;
       const updatedBrief = deepSet(currentState.briefData, field, value);
       return {
-        output: { status: "ok", field, message: `${field} frissitve` },
+        output: { status: "ok", field, message: `${field} frissítve` },
         updatedState: {
           ...currentState,
           briefData: updatedBrief,
         },
+      };
+    }
+    case "suggest_quick_replies": {
+      const { options } = input as SuggestQuickRepliesInput;
+      return {
+        output: { status: "ok", quickReplies: options },
+        updatedState: currentState,
       };
     }
     default:

@@ -19,6 +19,10 @@ export interface UpdateBriefInput {
   value: unknown;
 }
 
+export interface SuggestQuickRepliesInput {
+  options: Array<{ label: string; value: string | null }>;
+}
+
 export interface ToolResult {
   output: Record<string, unknown>;
   updatedState: BriefState;

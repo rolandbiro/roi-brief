@@ -10,7 +10,7 @@ const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY!,
 });
 
-const MAX_ITERATIONS = 10;
+const MAX_ITERATIONS = 25;
 
 interface ChatRequest {
   messages: Array<{ role: "user" | "assistant"; content: string }>;
@@ -42,6 +42,7 @@ export async function POST(request: Request) {
           ];
           let continueLoop = true;
           let iteration = 0;
+          let pendingQuickReplies: Array<{ label: string; value: string | null }> | null = null;
 
           while (continueLoop && iteration < MAX_ITERATIONS) {
             iteration++;
@@ -141,6 +142,10 @@ export async function POST(request: Request) {
                   currentBriefState
                 );
                 currentBriefState = result.updatedState;
+                // Collect quick replies if suggest_quick_replies was called
+                if (result.output.quickReplies) {
+                  pendingQuickReplies = result.output.quickReplies as Array<{ label: string; value: string | null }>;
+                }
                 toolResults.push({
                   type: "tool_result",
                   tool_use_id: tool.id,
@@ -175,7 +180,16 @@ export async function POST(request: Request) {
           if (iteration >= MAX_ITERATIONS) {
             controller.enqueue(
               encoder.encode(
-                `data: ${JSON.stringify({ text: "\n\n[A feldolgozas elerte a maximalis iteracioszamot. Kerlek, folytasd a beszelgetest.]" })}\n\n`
+                `data: ${JSON.stringify({ text: "\n\n[A feldolgozás elérte a maximális iterációszámot. Kérlek, folytasd a beszélgetést.]" })}\n\n`
+              )
+            );
+          }
+
+          // Send quick replies if any were suggested
+          if (pendingQuickReplies) {
+            controller.enqueue(
+              encoder.encode(
+                `data: ${JSON.stringify({ quickReplies: pendingQuickReplies })}\n\n`
               )
             );
           }
@@ -186,7 +200,7 @@ export async function POST(request: Request) {
               // Build extraction context with tool-collected data
               const extractionContext =
                 Object.keys(currentBriefState.briefData).length > 0
-                  ? `\n\nA tool use altal eddig gyujtott adatok:\n${JSON.stringify(currentBriefState.briefData, null, 2)}\n\nFelismert kampanytipusok: ${currentBriefState.confirmedTypes.length > 0 ? currentBriefState.confirmedTypes.join(", ") : currentBriefState.detectedTypes.join(", ")}`
+                  ? `\n\nA tool use által eddig gyűjtött adatok:\n${JSON.stringify(currentBriefState.briefData, null, 2)}\n\nFelismert kampánytípusok: ${currentBriefState.confirmedTypes.length > 0 ? currentBriefState.confirmedTypes.join(", ") : currentBriefState.detectedTypes.join(", ")}`
                   : "";
 
               const extractionResponse = await anthropic.messages.parse({
@@ -201,7 +215,7 @@ export async function POST(request: Request) {
                   {
                     role: "user" as const,
                     content:
-                      "Kerlek, foglald ossze a brief adatokat a beszelgetes alapjan.",
+                      "Kérlek, foglald össze a brief adatokat a beszélgetés alapján.",
                   },
                 ],
                 output_config: {
@@ -241,7 +255,7 @@ export async function POST(request: Request) {
   } catch (error) {
     console.error("Chat API error:", error);
     return Response.json(
-      { error: "Hiba tortent a chat feldolgozasa soran" },
+      { error: "Hiba történt a chat feldolgozása során" },
       { status: 500 }
     );
   }
