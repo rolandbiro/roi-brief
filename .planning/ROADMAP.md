@@ -1,0 +1,77 @@
+# Roadmap: ROI Brief Assistant v2
+
+## Overview
+
+A jelenlegi fix 13-kérdésű brief rendszert kampánytípus-adaptív, AI-vezérelt kikérdezésre alakítjuk át. A projekt három fázisban halad: először lefektetjük a típusrendszert és technikai alapokat (Zod séma, SDK upgrade, entry flow), aztán építjük rá az adaptív kérdezőmotort (típusdetektálás, moduláris prompt, tool use), végül a dinamikus riportrendszert és arculatot (PDF, email, BriefEditor).
+
+## Phases
+
+**Phase Numbering:**
+- Integer phases (1, 2, 3): Planned milestone work
+- Decimal phases (2.1, 2.2): Urgent insertions (marked with INSERTED)
+
+Decimal phases appear between their surrounding integers in numeric order.
+
+- [ ] **Phase 1: Type System & Foundation** - Zod sémák, SDK upgrade, entry flow átalakítás
+- [ ] **Phase 2: Adaptive Questioning Engine** - Típusdetektálás, moduláris prompt, tool use alapú adatgyűjtés
+- [ ] **Phase 3: Dynamic Report & Branding** - Dinamikus riport szekciók, BriefEditor, PDF letöltés, arculat
+
+## Phase Details
+
+### Phase 1: Type System & Foundation
+**Goal**: A rendszer ismeri a 4 kampánytípust, Zod sémákból építkezik, és az érdeklődő direkt linkről egyből chatbe érkezik (PDF upload nincsen)
+**Depends on**: Nothing (first phase)
+**Requirements**: TECH-01, TECH-02, TECH-03, TECH-04, TECH-05, FLOW-01, FLOW-02, FLOW-03
+**Success Criteria** (what must be TRUE):
+  1. Érdeklődő direkt linkről érkezik és egyből chat felületet lát (nincs PDF feltöltés opció)
+  2. BriefData típust Zod séma definiálja base + típusspecifikus kiterjesztésekkel (4 típus)
+  3. Claude API hívás structured output-ot ad vissza (nem BRIEF_JSON_START/END regex)
+  4. Kampánytípusonként külön prompt modul létezik amit a rendszer dinamikusan állít össze
+**Plans**: TBD
+
+Plans:
+- [ ] 01-01: TBD
+- [ ] 01-02: TBD
+
+### Phase 2: Adaptive Questioning Engine
+**Goal**: Az AI felismeri a kampánytípust, megerősítteti, és típusspecifikus, adaptív kérdéseket tesz fel amik során strukturáltan gyűlik az adat
+**Depends on**: Phase 1
+**Requirements**: TYPE-01, TYPE-02, TYPE-03, TYPE-04, QUES-01, QUES-02, QUES-03, QUES-04, QUES-05
+**Success Criteria** (what must be TRUE):
+  1. AI az első 2-3 válaszból felismeri a kampánytípust és megerősíttetést kér az érdeklődőtől
+  2. Multi-típus brief esetén az AI mindkét típus kérdéseit felteszi egyetlen beszélgetésben
+  3. AI először a stratégiai nagy képet érti meg, utána kér részleteket (nem fix sorrend)
+  4. AI visszakérdez ha vékony a válasz, és átugorja amit már megtudott
+  5. Quick-reply gombok megjelennek a chat-ben a kérdéstípustól függően
+**Plans**: TBD
+
+Plans:
+- [ ] 02-01: TBD
+- [ ] 02-02: TBD
+
+### Phase 3: Dynamic Report & Branding
+**Goal**: A brief riport dinamikusan alkalmazkodik a kampánytípus(ok)hoz, ROI Works arculatban jelenik meg, és az érdeklődő le tudja tölteni PDF-ben
+**Depends on**: Phase 2
+**Requirements**: REPT-01, REPT-02, REPT-03, REPT-04, REPT-05, BRND-01, BRND-02
+**Success Criteria** (what must be TRUE):
+  1. Riportban csak a kampánytípusnak megfelelő szekciók jelennek meg (nincs üres/irreleváns szekció)
+  2. Multi-típus brief esetén minden típusnak külön szekciója van a riportban
+  3. BriefEditor dinamikusan megjeleníti a típusspecifikus mezőket (szerkeszthető)
+  4. Érdeklődő egyetlen gombbal letöltheti a brief-et PDF-ben
+  5. PDF és email riport ROI Works arculatban jelenik meg (narancs/kék színek, Archivo betűtípus)
+**Plans**: TBD
+
+Plans:
+- [ ] 03-01: TBD
+- [ ] 03-02: TBD
+
+## Progress
+
+**Execution Order:**
+Phases execute in numeric order: 1 -> 2 -> 3
+
+| Phase | Plans Complete | Status | Completed |
+|-------|----------------|--------|-----------|
+| 1. Type System & Foundation | 0/TBD | Not started | - |
+| 2. Adaptive Questioning Engine | 0/TBD | Not started | - |
+| 3. Dynamic Report & Branding | 0/TBD | Not started | - |

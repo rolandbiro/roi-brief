@@ -84,36 +84,36 @@
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| TYPE-01 | — | Pending |
-| TYPE-02 | — | Pending |
-| TYPE-03 | — | Pending |
-| TYPE-04 | — | Pending |
-| QUES-01 | — | Pending |
-| QUES-02 | — | Pending |
-| QUES-03 | — | Pending |
-| QUES-04 | — | Pending |
-| QUES-05 | — | Pending |
-| FLOW-01 | — | Pending |
-| FLOW-02 | — | Pending |
-| FLOW-03 | — | Pending |
-| REPT-01 | — | Pending |
-| REPT-02 | — | Pending |
-| REPT-03 | — | Pending |
-| REPT-04 | — | Pending |
-| REPT-05 | — | Pending |
-| TECH-01 | — | Pending |
-| TECH-02 | — | Pending |
-| TECH-03 | — | Pending |
-| TECH-04 | — | Pending |
-| TECH-05 | — | Pending |
-| BRND-01 | — | Pending |
-| BRND-02 | — | Pending |
+| TYPE-01 | Phase 2 | Pending |
+| TYPE-02 | Phase 2 | Pending |
+| TYPE-03 | Phase 2 | Pending |
+| TYPE-04 | Phase 2 | Pending |
+| QUES-01 | Phase 2 | Pending |
+| QUES-02 | Phase 2 | Pending |
+| QUES-03 | Phase 2 | Pending |
+| QUES-04 | Phase 2 | Pending |
+| QUES-05 | Phase 2 | Pending |
+| FLOW-01 | Phase 1 | Pending |
+| FLOW-02 | Phase 1 | Pending |
+| FLOW-03 | Phase 1 | Pending |
+| REPT-01 | Phase 3 | Pending |
+| REPT-02 | Phase 3 | Pending |
+| REPT-03 | Phase 3 | Pending |
+| REPT-04 | Phase 3 | Pending |
+| REPT-05 | Phase 3 | Pending |
+| TECH-01 | Phase 1 | Pending |
+| TECH-02 | Phase 1 | Pending |
+| TECH-03 | Phase 1 | Pending |
+| TECH-04 | Phase 1 | Pending |
+| TECH-05 | Phase 1 | Pending |
+| BRND-01 | Phase 3 | Pending |
+| BRND-02 | Phase 3 | Pending |
 
 **Coverage:**
 - v1 requirements: 24 total
-- Mapped to phases: 0
-- Unmapped: 24 ⚠️
+- Mapped to phases: 24
+- Unmapped: 0
 
 ---
 *Requirements defined: 2026-02-10*
-*Last updated: 2026-02-10 after initial definition*
+*Last updated: 2026-02-10 after roadmap creation*
