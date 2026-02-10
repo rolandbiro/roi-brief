@@ -61,11 +61,13 @@ Plans:
   3. BriefEditor dinamikusan megjeleníti a típusspecifikus mezőket (szerkeszthető)
   4. Érdeklődő egyetlen gombbal letöltheti a brief-et PDF-ben
   5. PDF és email riport ROI Works arculatban jelenik meg (narancs/kék színek, Archivo betűtípus)
-**Plans**: TBD
+**Plans**: 4 plans
 
 Plans:
-- [ ] 03-01: TBD
-- [ ] 03-02: TBD
+- [ ] 03-01-PLAN.md -- Dinamikus szekció helper + read-only BriefEditor + brief page flow (Wave 1)
+- [ ] 03-02-PLAN.md -- PDF template + Archivo font + ROI Works arculat + PDF logó (Wave 1)
+- [ ] 03-03-PLAN.md -- PDF letöltés endpoint + send-brief + email template átírás (Wave 2)
+- [ ] 03-04-PLAN.md -- Vizuális és funkcionális ellenőrzés checkpoint (Wave 3)
 
 ## Progress
 
@@ -76,4 +78,4 @@ Phases execute in numeric order: 1 -> 2 -> 3
 |-------|----------------|--------|-----------|
 | 1. Type System & Foundation | 3/3 | ✓ Complete | 2026-02-10 |
 | 2. Adaptive Questioning Engine | 3/3 | ✓ Complete | 2026-02-10 |
-| 3. Dynamic Report & Branding | 0/TBD | Not started | - |
+| 3. Dynamic Report & Branding | 0/4 | Not started | - |
