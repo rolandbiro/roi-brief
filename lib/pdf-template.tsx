@@ -5,9 +5,11 @@ import {
   View,
   StyleSheet,
 } from "@react-pdf/renderer";
-import { BriefData } from "@/types/chat";
+import "@/lib/pdf-fonts";
+import { PdfLogo } from "@/lib/pdf-logo";
+import type { BriefData, CampaignType } from "@/types/brief";
+import { CAMPAIGN_TYPE_LABELS } from "@/types/brief";
 
-// ROI Works brand colors
 const colors = {
   orange: "#FF6400",
   blue: "#0022D2",
@@ -19,9 +21,9 @@ const colors = {
 
 const styles = StyleSheet.create({
   page: {
-    backgroundColor: colors.white,
+    fontFamily: "Archivo",
     padding: 40,
-    fontFamily: "Helvetica",
+    backgroundColor: colors.white,
   },
   header: {
     flexDirection: "row",
@@ -32,34 +34,45 @@ const styles = StyleSheet.create({
     borderBottomWidth: 2,
     borderBottomColor: colors.orange,
   },
-  logo: {
-    fontSize: 24,
-    fontWeight: "bold",
+  logoContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
+  logoText: {
+    fontSize: 18,
+    fontWeight: 900,
     color: colors.dark,
   },
-  logoAccent: {
+  logoTextAccent: {
     color: colors.orange,
   },
   date: {
     fontSize: 10,
     color: colors.gray,
   },
-  title: {
-    fontSize: 28,
-    fontWeight: "bold",
-    color: colors.dark,
-    marginBottom: 30,
-    textAlign: "center",
+  campaignTypes: {
+    flexDirection: "row",
+    gap: 6,
+    marginBottom: 20,
   },
-  titleAccent: {
-    color: colors.orange,
+  typeBadge: {
+    backgroundColor: colors.orange,
+    paddingVertical: 3,
+    paddingHorizontal: 8,
+    borderRadius: 4,
+  },
+  typeBadgeText: {
+    fontSize: 8,
+    color: colors.white,
+    fontWeight: 700,
   },
   section: {
     marginBottom: 20,
   },
   sectionTitle: {
     fontSize: 14,
-    fontWeight: "bold",
+    fontWeight: 700,
     color: colors.orange,
     marginBottom: 10,
     paddingBottom: 5,
@@ -73,18 +86,12 @@ const styles = StyleSheet.create({
   label: {
     fontSize: 10,
     color: colors.gray,
-    width: 120,
+    width: 140,
   },
   value: {
     fontSize: 10,
     color: colors.dark,
     flex: 1,
-  },
-  textBlock: {
-    fontSize: 10,
-    color: colors.dark,
-    lineHeight: 1.5,
-    marginTop: 5,
   },
   footer: {
     position: "absolute",
@@ -98,16 +105,143 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     borderTopColor: colors.light,
   },
-  list: {
-    marginTop: 5,
-  },
-  listItem: {
-    fontSize: 10,
-    color: colors.dark,
-    marginBottom: 3,
-    paddingLeft: 10,
-  },
 });
+
+// --- Utility functions ---
+
+function hasValue(val: unknown): boolean {
+  if (val === null || val === undefined || val === "") return false;
+  if (Array.isArray(val)) return val.length > 0;
+  return true;
+}
+
+function getNestedValue(obj: Record<string, unknown>, path: string): unknown {
+  return path.split(".").reduce<unknown>((acc, key) => {
+    if (acc && typeof acc === "object" && key in (acc as Record<string, unknown>)) {
+      return (acc as Record<string, unknown>)[key];
+    }
+    return undefined;
+  }, obj);
+}
+
+function formatValue(val: unknown): string {
+  if (Array.isArray(val)) return val.join(", ");
+  return String(val);
+}
+
+// --- Section definitions ---
+
+interface FieldDef {
+  label: string;
+  path: string;
+}
+
+interface SectionDef {
+  title: string;
+  fields: FieldDef[];
+}
+
+const EXECUTIVE_SUMMARY: SectionDef = {
+  title: "Executive Summary",
+  fields: [
+    { label: "Cégnév", path: "company_name" },
+    { label: "Kampány célja", path: "campaign_goal" },
+    { label: "Büdzsékeret", path: "budget_range" },
+    { label: "Célcsoport", path: "target_audience" },
+  ],
+};
+
+const BASE_SECTIONS: SectionDef[] = [
+  {
+    title: "Alapadatok",
+    fields: [
+      { label: "Cégnév", path: "company_name" },
+      { label: "Iparág", path: "industry" },
+      { label: "Kampány célja", path: "campaign_goal" },
+      { label: "Időzítés", path: "timing" },
+      { label: "Büdzsékeret", path: "budget_range" },
+      { label: "Célcsoport", path: "target_audience" },
+      { label: "Meglévő anyagok", path: "existing_materials" },
+      { label: "Korábbi kampányok", path: "previous_campaigns" },
+      { label: "Versenytársak", path: "competitors" },
+      { label: "Megjegyzések", path: "notes" },
+    ],
+  },
+];
+
+const TYPE_SECTIONS: Record<CampaignType, SectionDef[]> = {
+  media_buying: [
+    {
+      title: "Médiavásárlás",
+      fields: [
+        { label: "Célzott GRP", path: "media_specific.grp_target" },
+        { label: "Elvárt elérés", path: "media_specific.reach_target" },
+        { label: "Frekvencia limit", path: "media_specific.frequency_cap" },
+        { label: "Médiatípusok", path: "media_specific.media_types" },
+        { label: "Napszak preferenciák", path: "media_specific.daypart_preferences" },
+        { label: "Viewability elvárások", path: "media_specific.viewability_requirements" },
+      ],
+    },
+  ],
+  performance_ppc: [
+    {
+      title: "Performance / PPC",
+      fields: [
+        { label: "Cél ROAS", path: "performance_specific.target_roas" },
+        { label: "Cél CPA", path: "performance_specific.target_cpa" },
+        { label: "Konverziós események", path: "performance_specific.conversion_events" },
+        { label: "Landing page-ek", path: "performance_specific.landing_pages" },
+        { label: "Hirdetési fiókok", path: "performance_specific.ad_accounts" },
+        { label: "Attribúciós modell", path: "performance_specific.attribution_model" },
+      ],
+    },
+  ],
+  brand_awareness: [
+    {
+      title: "Brand / Awareness",
+      fields: [
+        { label: "Brand lift cél", path: "brand_specific.brand_lift_target" },
+        { label: "Üzenetrecall cél", path: "brand_specific.message_recall_target" },
+        { label: "Kreatív koncepció", path: "brand_specific.creative_concept" },
+        { label: "Hangvétel", path: "brand_specific.tonality" },
+        { label: "Pozicionálás", path: "brand_specific.positioning" },
+        { label: "Awareness csatornák", path: "brand_specific.awareness_channels" },
+      ],
+    },
+  ],
+  social_media: [
+    {
+      title: "Social Media",
+      fields: [
+        { label: "Organikus/paid arány", path: "social_specific.organic_paid_mix" },
+        { label: "Platformok", path: "social_specific.platforms" },
+        { label: "Tartalom típusok", path: "social_specific.content_types" },
+        { label: "Közösségkezelés", path: "social_specific.community_management" },
+        { label: "Influencer terv", path: "social_specific.influencer_plan" },
+        { label: "Posztolási gyakoriság", path: "social_specific.posting_frequency" },
+      ],
+    },
+  ],
+};
+
+// --- Components ---
+
+function SectionView({ section, data }: { section: SectionDef; data: Record<string, unknown> }) {
+  const filledFields = section.fields.filter((f) => hasValue(getNestedValue(data, f.path)));
+  if (filledFields.length === 0) return null;
+
+  return (
+    <View style={styles.section}>
+      <Text style={styles.sectionTitle}>{section.title}</Text>
+      {filledFields.map((field) => (
+        <View key={field.path} style={styles.row}>
+          <Text style={styles.label}>{field.label}:</Text>
+          <Text style={styles.value}>{formatValue(getNestedValue(data, field.path))}</Text>
+        </View>
+      ))}
+    </View>
+  );
+}
 
 interface BriefPDFProps {
   data: BriefData;
@@ -120,134 +254,54 @@ export function BriefPDF({ data }: BriefPDFProps) {
     day: "numeric",
   });
 
+  const dataRecord = data as unknown as Record<string, unknown>;
+
+  const typeSections = data.campaign_types.flatMap(
+    (type) => TYPE_SECTIONS[type] ?? []
+  );
+
   return (
     <Document>
       <Page size="A4" style={styles.page}>
         {/* Header */}
         <View style={styles.header}>
-          <Text style={styles.logo}>
-            ROI <Text style={styles.logoAccent}>WORKS</Text>
-          </Text>
+          <View style={styles.logoContainer}>
+            <PdfLogo width={30} />
+            <Text style={styles.logoText}>
+              ROI <Text style={styles.logoTextAccent}>WORKS</Text>
+            </Text>
+          </View>
           <Text style={styles.date}>{today}</Text>
         </View>
 
-        {/* Title */}
-        <Text style={styles.title}>
-          Kampány Brief: <Text style={styles.titleAccent}>{data.campaign.name}</Text>
-        </Text>
-
-        {/* Company Section */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Cégadatok</Text>
-          <View style={styles.row}>
-            <Text style={styles.label}>Cégnév:</Text>
-            <Text style={styles.value}>{data.company.name}</Text>
-          </View>
-          <View style={styles.row}>
-            <Text style={styles.label}>Kapcsolattartó:</Text>
-            <Text style={styles.value}>{data.company.contact_name}</Text>
-          </View>
-          <View style={styles.row}>
-            <Text style={styles.label}>Email:</Text>
-            <Text style={styles.value}>{data.company.contact_email}</Text>
-          </View>
-          <View style={styles.row}>
-            <Text style={styles.label}>Telefon:</Text>
-            <Text style={styles.value}>{data.company.contact_phone}</Text>
-          </View>
-        </View>
-
-        {/* Campaign Section */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Kampány</Text>
-          <View style={styles.row}>
-            <Text style={styles.label}>Típus:</Text>
-            <Text style={styles.value}>{data.campaign.type}</Text>
-          </View>
-          <View style={styles.row}>
-            <Text style={styles.label}>Cél:</Text>
-            <Text style={styles.value}>{data.campaign.goal}</Text>
-          </View>
-          <Text style={styles.textBlock}>
-            <Text style={{ fontWeight: "bold" }}>Üzenet: </Text>
-            {data.campaign.message}
-          </Text>
-          <View style={styles.list}>
-            <Text style={{ ...styles.label, marginTop: 5 }}>KPI-k:</Text>
-            {data.campaign.kpis.map((kpi, index) => (
-              <Text key={index} style={styles.listItem}>
-                • {kpi}
+        {/* Campaign type badges */}
+        <View style={styles.campaignTypes}>
+          {data.campaign_types.map((type) => (
+            <View key={type} style={styles.typeBadge}>
+              <Text style={styles.typeBadgeText}>
+                {CAMPAIGN_TYPE_LABELS[type]}
               </Text>
-            ))}
-          </View>
+            </View>
+          ))}
         </View>
 
-        {/* Target Audience Section */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Célcsoport</Text>
-          <View style={styles.row}>
-            <Text style={styles.label}>Nem:</Text>
-            <Text style={styles.value}>{data.target_audience.demographics.gender}</Text>
-          </View>
-          <View style={styles.row}>
-            <Text style={styles.label}>Kor:</Text>
-            <Text style={styles.value}>{data.target_audience.demographics.age}</Text>
-          </View>
-          <View style={styles.row}>
-            <Text style={styles.label}>Földrajzi hely:</Text>
-            <Text style={styles.value}>{data.target_audience.demographics.location}</Text>
-          </View>
-          <Text style={styles.textBlock}>
-            <Text style={{ fontWeight: "bold" }}>Pszichográfia: </Text>
-            {data.target_audience.psychographics}
-          </Text>
-          <Text style={styles.textBlock}>
-            <Text style={{ fontWeight: "bold" }}>Persona: </Text>
-            {data.target_audience.persona}
-          </Text>
-        </View>
+        {/* Executive Summary */}
+        <SectionView section={EXECUTIVE_SUMMARY} data={dataRecord} />
 
-        {/* Channels & Timeline */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Csatornák és Időzítés</Text>
-          <View style={styles.row}>
-            <Text style={styles.label}>Csatornák:</Text>
-            <Text style={styles.value}>{data.channels.join(", ")}</Text>
-          </View>
-          <View style={styles.row}>
-            <Text style={styles.label}>Kezdés:</Text>
-            <Text style={styles.value}>{data.timeline.start}</Text>
-          </View>
-          <View style={styles.row}>
-            <Text style={styles.label}>Befejezés:</Text>
-            <Text style={styles.value}>{data.timeline.end}</Text>
-          </View>
-        </View>
+        {/* Base sections */}
+        {BASE_SECTIONS.map((section) => (
+          <SectionView key={section.title} section={section} data={dataRecord} />
+        ))}
 
-        {/* Budget & Competitors */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Költségvetés és Versenytársak</Text>
-          <View style={styles.row}>
-            <Text style={styles.label}>Büdzsé:</Text>
-            <Text style={styles.value}>{data.budget.total}</Text>
-          </View>
-          <View style={styles.row}>
-            <Text style={styles.label}>Versenytársak:</Text>
-            <Text style={styles.value}>{data.competitors.join(", ")}</Text>
-          </View>
-        </View>
-
-        {/* Notes */}
-        {data.notes && (
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Megjegyzések</Text>
-            <Text style={styles.textBlock}>{data.notes}</Text>
-          </View>
-        )}
+        {/* Type-specific sections */}
+        {typeSections.map((section) => (
+          <SectionView key={section.title} section={section} data={dataRecord} />
+        ))}
 
         {/* Footer */}
         <Text style={styles.footer}>
-          Ez a dokumentum a ROI Works brief rendszerrel készült. • {today}
+          Ez a dokumentum a ROI Works AI Brief rendszerrel készült. • {today}
+          {"\n"}© 2026 ROI Works
         </Text>
       </Page>
     </Document>
