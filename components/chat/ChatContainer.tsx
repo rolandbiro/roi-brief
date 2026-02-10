@@ -1,15 +1,18 @@
 "use client";
 
 import { useRef, useEffect } from "react";
-import { Message } from "@/types/chat";
+import { Message, QuickReply } from "@/types/chat";
 import { ChatMessage } from "./ChatMessage";
 import { ChatInput } from "./ChatInput";
+import { QuickReplies } from "./QuickReplies";
 
 interface ChatContainerProps {
   messages: Message[];
   onSendMessage: (message: string) => void;
   isLoading?: boolean;
   streamingContent?: string;
+  quickReplies?: QuickReply[] | null;
+  onQuickReply?: (value: string | null) => void;
 }
 
 export function ChatContainer({
@@ -17,6 +20,8 @@ export function ChatContainer({
   onSendMessage,
   isLoading = false,
   streamingContent,
+  quickReplies,
+  onQuickReply,
 }: ChatContainerProps) {
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -75,6 +80,15 @@ export function ChatContainer({
           </div>
         )}
 
+        {/* Quick-reply gombok */}
+        {quickReplies && quickReplies.length > 0 && !isLoading && !streamingContent && (
+          <QuickReplies
+            options={quickReplies}
+            onSelect={onQuickReply || (() => {})}
+            disabled={isLoading}
+          />
+        )}
+
         <div ref={messagesEndRef} />
       </div>
 
@@ -83,7 +97,7 @@ export function ChatContainer({
         <ChatInput
           onSend={onSendMessage}
           disabled={isLoading}
-          placeholder={isLoading ? "Várakozás a válaszra..." : "Írja be válaszát..."}
+          placeholder={isLoading ? "Gondolkodik..." : "Írd be a válaszod..."}
         />
       </div>
     </div>

@@ -19,6 +19,8 @@ export default function BriefPage() {
     error,
     startChat,
     sendMessage,
+    quickReplies,
+    handleQuickReply,
   } = useChat();
 
   const showEditor = useMemo(() => {
@@ -77,6 +79,8 @@ export default function BriefPage() {
             isLoading={isLoading}
             streamingContent={streamingContent}
             onSendMessage={sendMessage}
+            quickReplies={quickReplies}
+            onQuickReply={handleQuickReply}
           />
         </div>
 
@@ -95,7 +99,7 @@ export default function BriefPage() {
                   <div>
                     <h3 className="font-bold text-roi-orange text-lg">Brief kész!</h3>
                     <p className="text-sm text-roi-gray-light">
-                      Az AI összegyűjtötte az adatokat. Ellenőrizze és küldje el.
+                      Az AI összegyűjtötte az adatokat. Nézd át és küldd el.
                     </p>
                   </div>
                 </div>

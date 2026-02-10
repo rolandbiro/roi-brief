@@ -12,7 +12,7 @@ interface ChatInputProps {
 export function ChatInput({
   onSend,
   disabled = false,
-  placeholder = "Írja be válaszát...",
+  placeholder = "Írd be a válaszod...",
 }: ChatInputProps) {
   const [input, setInput] = useState("");
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -90,7 +90,7 @@ export function ChatInput({
         </button>
       </div>
       <p className="text-xs text-roi-gray-light/40 mt-2 text-center">
-        Nyomjon <kbd className="px-1.5 py-0.5 bg-roi-gray-darker rounded text-roi-gray-light/60">Enter</kbd>-t a küldéshez
+        Nyomj <kbd className="px-1.5 py-0.5 bg-roi-gray-darker rounded text-roi-gray-light/60">Enter</kbd>-t a küldéshez
       </p>
     </div>
   );

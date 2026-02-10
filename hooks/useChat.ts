@@ -110,7 +110,7 @@ export function useChat() {
         setBriefData(newBriefData);
       }
     } catch (err) {
-      setError("Hiba tortent a chat inditasa soran. Kerlek, probald ujra.");
+      setError("Hiba történt a chat indítása során. Kérlek, próbáld újra.");
       console.error(err);
     } finally {
       setIsLoading(false);
@@ -167,7 +167,7 @@ export function useChat() {
         }
       } catch (err) {
         setError(
-          "Hiba tortent az uzenet kuldese soran. Kerlek, probald ujra."
+          "Hiba történt az üzenet küldése során. Kérlek, próbáld újra."
         );
         console.error(err);
       } finally {
@@ -218,7 +218,7 @@ export function useChat() {
       }
     } catch (err) {
       setError(
-        "Hiba tortent a brief osszeallitasa soran. Kerlek, probald ujra."
+        "Hiba történt a brief összeállítása során. Kérlek, próbáld újra."
       );
       console.error(err);
     } finally {
@@ -232,7 +232,7 @@ export function useChat() {
       if (value !== null) {
         sendMessage(value);
       }
-      // Ha null (= "Egyeb"), a ChatContainer fogja kezelni az input fokuszalast
+      // Ha null (= "Egyéb"), a ChatContainer fogja kezelni az input fókuszálást
     },
     [sendMessage]
   );
