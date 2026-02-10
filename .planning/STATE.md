@@ -10,29 +10,29 @@ See: .planning/PROJECT.md (updated 2026-02-10)
 ## Current Position
 
 Phase: 2 of 3 (Adaptive Questioning Engine)
-Plan: 1 of 3 in current phase (complete)
-Status: Plan 02-01 complete, Plan 02-02 next
-Last activity: 2026-02-10 — Plan 02-01 executed (schema + tools + prompts)
+Plan: 2 of 3 in current phase (complete)
+Status: Plan 02-02 complete, Plan 02-03 next
+Last activity: 2026-02-10 — Plan 02-02 executed (agentic loop + briefState management)
 
-Progress: [███-------] 33% (1/3 plans in Phase 2)
+Progress: [██████----] 67% (2/3 plans in Phase 2)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 4
+- Total plans completed: 5
 - Average duration: 4min
-- Total execution time: 16min
+- Total execution time: 18min
 
 **By Phase:**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
 | 01 | 3/3 | 12min | 4min |
-| 02 | 1/3 | 4min | 4min |
+| 02 | 2/3 | 6min | 3min |
 
 **Recent Trend:**
-- Last 5 plans: 01-01 (3min), 01-02 (4min), 01-03 (5min), 02-01 (4min)
-- Trend: stable
+- Last 5 plans: 01-01 (3min), 01-02 (4min), 01-03 (5min), 02-01 (4min), 02-02 (2min)
+- Trend: accelerating
 
 *Updated after each plan completion*
 
@@ -58,6 +58,10 @@ Recent decisions affecting current work:
 - 02-01: composeSystemPrompt signature changed to accept BriefState (breaking for route.ts, Plan 02 fixes)
 - 02-01: classify_campaign merges types additively (Set-based), not overwrites
 - 02-01: Standalone specific schemas extracted for reuse in BriefDataSchema
+- 02-02: briefState round-trip via client (KISS, no server session storage)
+- 02-02: briefStateRef useRef pattern for closure-safe access in React hooks
+- 02-02: Extraction prompt enriched with tool-collected briefData as context
+- 02-02: MAX_ITERATIONS = 10 for agentic loop infinite loop protection
 
 ### Pending Todos
 
@@ -65,12 +69,12 @@ None.
 
 ### Blockers/Concerns
 
-- Phase 2: Multi-turn tool execution SSE stream-en belül — prototípust igényel (research flag)
+- ~~Phase 2: Multi-turn tool execution SSE stream-en belül~~ — RESOLVED (02-02 agentic loop)
 - Phase 3: @react-pdf/renderer conditional rendering bug — tesztelés szükséges (research flag)
 - Pre-existing TS errors in BriefEditor, pdf-template, send-brief — Phase 3 scope
 
 ## Session Continuity
 
 Last session: 2026-02-10
-Stopped at: Completed 02-01-PLAN.md (schema + tools + prompts)
-Resume file: .planning/phases/02-adaptive-questioning-engine/02-01-SUMMARY.md
+Stopped at: Completed 02-02-PLAN.md (agentic loop + briefState management)
+Resume file: .planning/phases/02-adaptive-questioning-engine/02-02-SUMMARY.md
