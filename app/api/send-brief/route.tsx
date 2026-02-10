@@ -1,6 +1,6 @@
 import { renderToBuffer } from "@react-pdf/renderer";
 import sgMail from "@sendgrid/mail";
-import { BriefData } from "@/types/chat";
+import type { BriefData } from "@/types/brief";
 import { BriefPDF } from "@/lib/pdf-template";
 import { generateEmailHtml } from "@/lib/email-template";
 
@@ -22,6 +22,19 @@ export async function POST(request: Request) {
     );
   }
 
+  // Recipients: only ROI Works team (NOT the client)
+  const recipients = [
+    process.env.BRIEF_RECIPIENT_1,
+    process.env.BRIEF_RECIPIENT_2,
+  ].filter(Boolean) as string[];
+
+  if (recipients.length === 0) {
+    return Response.json(
+      { error: "Nincs konfigurált címzett" },
+      { status: 500 }
+    );
+  }
+
   // Generate PDF buffer (JSX outside try/catch for lint compliance)
   const pdfElement = <BriefPDF data={briefData} />;
 
@@ -29,15 +42,10 @@ export async function POST(request: Request) {
     const pdfBuffer = await renderToBuffer(pdfElement);
     const pdfBase64 = Buffer.from(pdfBuffer).toString("base64");
 
-    // Generate email HTML
-    const emailHtml = generateEmailHtml(briefData);
+    // Generate email HTML (pass clientEmail for team reference)
+    const emailHtml = generateEmailHtml(briefData, clientEmail);
 
-    // Recipient list
-    const recipients = [
-      clientEmail,
-      process.env.BRIEF_RECIPIENT_1,
-      process.env.BRIEF_RECIPIENT_2,
-    ].filter(Boolean) as string[];
+    const filename = `brief-${(briefData.company_name || "brief").toLowerCase().replace(/\s+/g, "-")}.pdf`;
 
     // Create email messages
     const messages = recipients.map((to) => ({
@@ -46,12 +54,12 @@ export async function POST(request: Request) {
         email: process.env.SENDGRID_FROM_EMAIL!,
         name: "ROI Works Brief",
       },
-      subject: `Kampány Brief: ${briefData.campaign.name}`,
+      subject: `Kampány Brief: ${briefData.company_name || "Új brief"}`,
       html: emailHtml,
       attachments: [
         {
           content: pdfBase64,
-          filename: `brief-${briefData.campaign.name.toLowerCase().replace(/\s+/g, "-")}.pdf`,
+          filename,
           type: "application/pdf",
           disposition: "attachment" as const,
         },
