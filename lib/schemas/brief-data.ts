@@ -1,14 +1,23 @@
 import { z } from "zod";
-import { MediaBuyingBriefSchema } from "./media-buying";
-import { PerformanceBriefSchema } from "./performance";
-import { BrandBriefSchema } from "./brand";
-import { SocialBriefSchema } from "./social";
+import { CampaignTypeEnum } from "./campaign-types";
+import { BriefBaseSchema } from "./brief-base";
+import { MediaSpecificSchema } from "./media-buying";
+import { PerformanceSpecificSchema } from "./performance";
+import { BrandSpecificSchema } from "./brand";
+import { SocialSpecificSchema } from "./social";
 
-export const BriefDataSchema = z.discriminatedUnion("campaign_type", [
-  MediaBuyingBriefSchema,
-  PerformanceBriefSchema,
-  BrandBriefSchema,
-  SocialBriefSchema,
-]);
+export const BriefDataSchema = BriefBaseSchema.extend({
+  campaign_types: z.array(CampaignTypeEnum)
+    .min(1)
+    .describe("Kampanytipus(ok) — egy vagy tobb"),
+  media_specific: MediaSpecificSchema.optional()
+    .describe("Mediavasarlas specifikus adatok"),
+  performance_specific: PerformanceSpecificSchema.optional()
+    .describe("Performance/PPC specifikus adatok"),
+  brand_specific: BrandSpecificSchema.optional()
+    .describe("Brand/awareness specifikus adatok"),
+  social_specific: SocialSpecificSchema.optional()
+    .describe("Social media specifikus adatok"),
+});
 
 export type BriefData = z.infer<typeof BriefDataSchema>;
