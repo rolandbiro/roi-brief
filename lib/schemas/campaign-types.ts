@@ -10,7 +10,7 @@ export const CampaignTypeEnum = z.enum([
 export type CampaignType = z.infer<typeof CampaignTypeEnum>;
 
 export const CAMPAIGN_TYPE_LABELS: Record<CampaignType, string> = {
-  media_buying: "Mediavasarlas",
+  media_buying: "Médiavásárlás",
   performance_ppc: "Performance/PPC",
   brand_awareness: "Brand/Awareness",
   social_media: "Social Media",

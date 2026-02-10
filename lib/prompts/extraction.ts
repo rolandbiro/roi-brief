@@ -2,9 +2,10 @@ export const EXTRACTION_PROMPT = `A feladatod, hogy a felhasználó és az asszi
 
 SZABÁLYOK:
 - A beszélgetés alapján töltsd ki a mezőket amennyire lehet
-- Ha egy információ nem hangzott el a beszélgetésben, hagyd üresen (optional mezők) vagy adj üres tömböt (array mezők)
+- Ha egy információ nem hangzott el, hagyd üresen (optional mezők) vagy adj üres tömböt (array mezők)
 - Magyar kontextusban gondolkodj — a cégnevek, iparágak, helyszínek magyarul szerepeljenek
-- A campaign_type mezőt a beszélgetés tartalma alapján állapítsd meg
+- A campaign_types mezőbe MINDEN felismert kampánytípust tedd (tömb, lehet több is)
+- A típusspecifikus mezőket (media_specific, performance_specific, brand_specific, social_specific) CSAK akkor töltsd ki ha a campaign_types tartalmazza az adott típust
 - Légy pontos: ne találj ki adatokat, csak azt írd amit a beszélgetésből ki lehet olvasni
-- A típusspecifikus mezőket (media_specific, performance_specific, brand_specific, social_specific) a kampánytípusnak megfelelően töltsd ki
+- Ha a beszélgetésben tool use által rögzített adatok is vannak, azokat vedd figyelembe
 `;
