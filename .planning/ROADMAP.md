@@ -44,11 +44,12 @@ Plans:
   3. AI először a stratégiai nagy képet érti meg, utána kér részleteket (nem fix sorrend)
   4. AI visszakérdez ha vékony a válasz, és átugorja amit már megtudott
   5. Quick-reply gombok megjelennek a chat-ben a kérdéstípustól függően
-**Plans**: TBD
+**Plans**: 3 plans
 
 Plans:
-- [ ] 02-01: TBD
-- [ ] 02-02: TBD
+- [ ] 02-01-PLAN.md -- Multi-típus séma + tool definíciók + tegező prompt rendszer (Wave 1)
+- [ ] 02-02-PLAN.md -- Chat API agentic loop + useChat briefState management (Wave 2)
+- [ ] 02-03-PLAN.md -- Quick-reply UI + adaptív flow checkpoint (Wave 3)
 
 ### Phase 3: Dynamic Report & Branding
 **Goal**: A brief riport dinamikusan alkalmazkodik a kampánytípus(ok)hoz, ROI Works arculatban jelenik meg, és az érdeklődő le tudja tölteni PDF-ben
@@ -74,5 +75,5 @@ Phases execute in numeric order: 1 -> 2 -> 3
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Type System & Foundation | 3/3 | ✓ Complete | 2026-02-10 |
-| 2. Adaptive Questioning Engine | 0/TBD | Not started | - |
+| 2. Adaptive Questioning Engine | 0/3 | Planned | - |
 | 3. Dynamic Report & Branding | 0/TBD | Not started | - |
