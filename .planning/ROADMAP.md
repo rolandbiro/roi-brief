@@ -12,7 +12,7 @@ A jelenlegi fix 13-kérdésű brief rendszert kampánytípus-adaptív, AI-vezér
 
 Decimal phases appear between their surrounding integers in numeric order.
 
-- [ ] **Phase 1: Type System & Foundation** - Zod sémák, SDK upgrade, entry flow átalakítás
+- [x] **Phase 1: Type System & Foundation** - Zod sémák, SDK upgrade, entry flow átalakítás ✓ (2026-02-10)
 - [ ] **Phase 2: Adaptive Questioning Engine** - Típusdetektálás, moduláris prompt, tool use alapú adatgyűjtés
 - [ ] **Phase 3: Dynamic Report & Branding** - Dinamikus riport szekciók, BriefEditor, PDF letöltés, arculat
 
@@ -30,9 +30,9 @@ Decimal phases appear between their surrounding integers in numeric order.
 **Plans**: 3 plans
 
 Plans:
-- [ ] 01-01-PLAN.md -- Zod sémák + moduláris prompt rendszer (Wave 1)
-- [ ] 01-02-PLAN.md -- SDK upgrade + API route + useChat refactor (Wave 2)
-- [ ] 01-03-PLAN.md -- Entry flow átalakítás + PDF eltávolítás (Wave 3)
+- [x] 01-01-PLAN.md -- Zod sémák + moduláris prompt rendszer (Wave 1)
+- [x] 01-02-PLAN.md -- SDK upgrade + API route + useChat refactor (Wave 2)
+- [x] 01-03-PLAN.md -- Entry flow átalakítás + PDF eltávolítás (Wave 3)
 
 ### Phase 2: Adaptive Questioning Engine
 **Goal**: Az AI felismeri a kampánytípust, megerősítteti, és típusspecifikus, adaptív kérdéseket tesz fel amik során strukturáltan gyűlik az adat
@@ -73,6 +73,6 @@ Phases execute in numeric order: 1 -> 2 -> 3
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Type System & Foundation | 0/3 | Planned | - |
+| 1. Type System & Foundation | 3/3 | ✓ Complete | 2026-02-10 |
 | 2. Adaptive Questioning Engine | 0/TBD | Not started | - |
 | 3. Dynamic Report & Branding | 0/TBD | Not started | - |
