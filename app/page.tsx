@@ -2,21 +2,12 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { PdfUpload } from "@/components/PdfUpload";
-
 export default function Home() {
   const router = useRouter();
-  const [file, setFile] = useState<{ name: string; base64: string } | null>(null);
   const [acceptedPrivacy, setAcceptedPrivacy] = useState(false);
 
-  const handleFileSelected = (selectedFile: File, base64: string) => {
-    setFile({ name: selectedFile.name, base64 });
-    // Store in sessionStorage for the chat page
-    sessionStorage.setItem("proposalPdf", JSON.stringify({ name: selectedFile.name, base64 }));
-  };
-
   const handleContinue = () => {
-    if (file) {
+    if (acceptedPrivacy) {
       router.push("/brief");
     }
   };
@@ -134,21 +125,10 @@ export default function Home() {
           </label>
         </div>
 
-        {/* PDF Upload with smooth reveal */}
-        <div className={`
-          transition-all duration-500 ease-out
-          ${!acceptedPrivacy
-            ? 'opacity-40 blur-[2px] pointer-events-none translate-y-2'
-            : 'opacity-100 blur-0 translate-y-0'
-          }
-        `}>
-          <PdfUpload onFileSelected={handleFileSelected} />
-        </div>
-
         <div className="mt-8">
           <button
             onClick={handleContinue}
-            disabled={!file || !acceptedPrivacy}
+            disabled={!acceptedPrivacy}
             className="btn-primary text-lg px-8 py-4 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             Tovább a brief kitöltéshez
