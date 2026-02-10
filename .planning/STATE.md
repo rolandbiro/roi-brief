@@ -5,32 +5,33 @@
 See: .planning/PROJECT.md (updated 2026-02-10)
 
 **Core value:** Az AI asszisztens kampánytípustól függően releváns, szakmai mélységű kérdéseket tesz fel — adaptív kikérdezés, ami profi briefté áll össze.
-**Current focus:** Phase 1 complete — ready for Phase 2
+**Current focus:** Phase 2 in progress — Adaptive Questioning Engine
 
 ## Current Position
 
-Phase: 1 of 3 (Type System & Foundation)
-Plan: 3 of 3 in current phase (all plans complete)
-Status: Phase 1 complete, verified (4/4 must-haves)
-Last activity: 2026-02-10 — Phase 1 verified and complete
+Phase: 2 of 3 (Adaptive Questioning Engine)
+Plan: 1 of 3 in current phase (complete)
+Status: Plan 02-01 complete, Plan 02-02 next
+Last activity: 2026-02-10 — Plan 02-01 executed (schema + tools + prompts)
 
-Progress: [██████████] 100% (3/3 plans in Phase 1)
+Progress: [███-------] 33% (1/3 plans in Phase 2)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 3
+- Total plans completed: 4
 - Average duration: 4min
-- Total execution time: 12min
+- Total execution time: 16min
 
 **By Phase:**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
 | 01 | 3/3 | 12min | 4min |
+| 02 | 1/3 | 4min | 4min |
 
 **Recent Trend:**
-- Last 5 plans: 01-01 (3min), 01-02 (4min), 01-03 (5min)
+- Last 5 plans: 01-01 (3min), 01-02 (4min), 01-03 (5min), 02-01 (4min)
 - Trend: stable
 
 *Updated after each plan completion*
@@ -53,6 +54,10 @@ Recent decisions affecting current work:
 - 01-02: startChat sends "Szia!" as initial user message to trigger AI introduction
 - 01-03: Brief page marad /brief route-on (Opció A)
 - 01-03: skipAnimation prop a streaming→final átmenet pulzálás ellen
+- 02-01: Flat multi-type schema (campaign_types array) replaces discriminatedUnion
+- 02-01: composeSystemPrompt signature changed to accept BriefState (breaking for route.ts, Plan 02 fixes)
+- 02-01: classify_campaign merges types additively (Set-based), not overwrites
+- 02-01: Standalone specific schemas extracted for reuse in BriefDataSchema
 
 ### Pending Todos
 
@@ -67,5 +72,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-02-10
-Stopped at: Phase 1 verified and complete, ready for Phase 2 planning
-Resume file: .planning/phases/01-type-system-foundation/01-VERIFICATION.md
+Stopped at: Completed 02-01-PLAN.md (schema + tools + prompts)
+Resume file: .planning/phases/02-adaptive-questioning-engine/02-01-SUMMARY.md
