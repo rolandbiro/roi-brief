@@ -1,8 +1,9 @@
 "use client";
 
-import { useState, useCallback } from "react";
-import { Message } from "@/types/chat";
+import { useState, useCallback, useRef } from "react";
+import { Message, QuickReply } from "@/types/chat";
 import { BriefData } from "@/types/brief";
+import { BriefState, createInitialBriefState } from "@/lib/tools";
 
 export function useChat() {
   const [messages, setMessages] = useState<Message[]>([]);
@@ -10,14 +11,27 @@ export function useChat() {
   const [streamingContent, setStreamingContent] = useState("");
   const [briefData, setBriefData] = useState<BriefData | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [briefState, setBriefState] = useState<BriefState>(
+    createInitialBriefState()
+  );
+  const [quickReplies, setQuickReplies] = useState<QuickReply[] | null>(null);
+
+  // Ref to track latest briefState for use in closures
+  const briefStateRef = useRef<BriefState>(briefState);
+  briefStateRef.current = briefState;
 
   const processStream = async (
     response: Response
-  ): Promise<{ content: string; briefData: BriefData | null }> => {
+  ): Promise<{
+    content: string;
+    briefData: BriefData | null;
+    briefState: BriefState | null;
+  }> => {
     const reader = response.body?.getReader();
     const decoder = new TextDecoder();
     let fullContent = "";
     let extractedBriefData: BriefData | null = null;
+    let updatedBriefState: BriefState | null = null;
 
     while (reader) {
       const { done, value } = await reader.read();
@@ -40,6 +54,14 @@ export function useChat() {
               extractedBriefData = parsed.briefData;
               setBriefData(parsed.briefData);
             }
+            if (parsed.briefState) {
+              updatedBriefState = parsed.briefState;
+              setBriefState(parsed.briefState);
+              briefStateRef.current = parsed.briefState;
+            }
+            if (parsed.quickReplies) {
+              setQuickReplies(parsed.quickReplies);
+            }
           } catch {
             // Ignore parse errors for incomplete chunks
           }
@@ -47,12 +69,17 @@ export function useChat() {
       }
     }
 
-    return { content: fullContent, briefData: extractedBriefData };
+    return {
+      content: fullContent,
+      briefData: extractedBriefData,
+      briefState: updatedBriefState,
+    };
   };
 
   const startChat = useCallback(async () => {
     setIsLoading(true);
     setError(null);
+    setQuickReplies(null);
 
     try {
       const response = await fetch("/api/chat", {
@@ -60,6 +87,7 @@ export function useChat() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           messages: [{ role: "user", content: "Szia!" }],
+          briefState: briefStateRef.current,
         }),
       });
 
@@ -82,7 +110,7 @@ export function useChat() {
         setBriefData(newBriefData);
       }
     } catch (err) {
-      setError("Hiba történt a chat indítása során. Kérjük, próbálja újra.");
+      setError("Hiba tortent a chat inditasa soran. Kerlek, probald ujra.");
       console.error(err);
     } finally {
       setIsLoading(false);
@@ -93,6 +121,7 @@ export function useChat() {
     async (content: string) => {
       setIsLoading(true);
       setError(null);
+      setQuickReplies(null);
 
       const userMessage: Message = {
         id: crypto.randomUUID(),
@@ -112,7 +141,10 @@ export function useChat() {
         const response = await fetch("/api/chat", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ messages: allMessages }),
+          body: JSON.stringify({
+            messages: allMessages,
+            briefState: briefStateRef.current,
+          }),
         });
 
         if (!response.ok) throw new Error("Failed to send message");
@@ -135,7 +167,7 @@ export function useChat() {
         }
       } catch (err) {
         setError(
-          "Hiba történt az üzenet küldése során. Kérjük, próbálja újra."
+          "Hiba tortent az uzenet kuldese soran. Kerlek, probald ujra."
         );
         console.error(err);
       } finally {
@@ -161,6 +193,7 @@ export function useChat() {
         body: JSON.stringify({
           messages: allMessages,
           extractBrief: true,
+          briefState: briefStateRef.current,
         }),
       });
 
@@ -185,7 +218,7 @@ export function useChat() {
       }
     } catch (err) {
       setError(
-        "Hiba történt a brief összeállítása során. Kérjük, próbálja újra."
+        "Hiba tortent a brief osszeallitasa soran. Kerlek, probald ujra."
       );
       console.error(err);
     } finally {
@@ -193,15 +226,29 @@ export function useChat() {
     }
   }, [messages]);
 
+  const handleQuickReply = useCallback(
+    (value: string | null) => {
+      setQuickReplies(null);
+      if (value !== null) {
+        sendMessage(value);
+      }
+      // Ha null (= "Egyeb"), a ChatContainer fogja kezelni az input fokuszalast
+    },
+    [sendMessage]
+  );
+
   return {
     messages,
     isLoading,
     streamingContent,
     briefData,
     error,
+    briefState,
+    quickReplies,
     startChat,
     sendMessage,
     setBriefData,
     requestExtraction,
+    handleQuickReply,
   };
 }
