@@ -27,11 +27,12 @@ Decimal phases appear between their surrounding integers in numeric order.
   2. BriefData típust Zod séma definiálja base + típusspecifikus kiterjesztésekkel (4 típus)
   3. Claude API hívás structured output-ot ad vissza (nem BRIEF_JSON_START/END regex)
   4. Kampánytípusonként külön prompt modul létezik amit a rendszer dinamikusan állít össze
-**Plans**: TBD
+**Plans**: 3 plans
 
 Plans:
-- [ ] 01-01: TBD
-- [ ] 01-02: TBD
+- [ ] 01-01-PLAN.md -- Zod sémák + moduláris prompt rendszer (Wave 1)
+- [ ] 01-02-PLAN.md -- SDK upgrade + API route + useChat refactor (Wave 2)
+- [ ] 01-03-PLAN.md -- Entry flow átalakítás + PDF eltávolítás (Wave 3)
 
 ### Phase 2: Adaptive Questioning Engine
 **Goal**: Az AI felismeri a kampánytípust, megerősítteti, és típusspecifikus, adaptív kérdéseket tesz fel amik során strukturáltan gyűlik az adat
@@ -72,6 +73,6 @@ Phases execute in numeric order: 1 -> 2 -> 3
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Type System & Foundation | 0/TBD | Not started | - |
+| 1. Type System & Foundation | 0/3 | Planned | - |
 | 2. Adaptive Questioning Engine | 0/TBD | Not started | - |
 | 3. Dynamic Report & Branding | 0/TBD | Not started | - |
