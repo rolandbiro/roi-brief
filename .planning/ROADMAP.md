@@ -58,7 +58,7 @@ Plans:
 **Success Criteria** (what must be TRUE):
   1. Riportban csak a kampánytípusnak megfelelő szekciók jelennek meg (nincs üres/irreleváns szekció)
   2. Multi-típus brief esetén minden típusnak külön szekciója van a riportban
-  3. BriefEditor dinamikusan megjeleníti a típusspecifikus mezőket (szerkeszthető)
+  3. BriefEditor dinamikusan megjeleníti a típusspecifikus mezőket (read-only áttekintés, nem szerkeszthető)
   4. Érdeklődő egyetlen gombbal letöltheti a brief-et PDF-ben
   5. PDF és email riport ROI Works arculatban jelenik meg (narancs/kék színek, Archivo betűtípus)
 **Plans**: 4 plans
