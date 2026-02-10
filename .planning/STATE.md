@@ -5,23 +5,23 @@
 See: .planning/PROJECT.md (updated 2026-02-10)
 
 **Core value:** Az AI asszisztens kampánytípustól függően releváns, szakmai mélységű kérdéseket tesz fel — adaptív kikérdezés, ami profi briefté áll össze.
-**Current focus:** Phase 3 in progress — PDF template + branding
+**Current focus:** Phase 3 in progress — BriefEditor read-only + email/send-brief
 
 ## Current Position
 
 Phase: 3 of 3 (Dynamic Report & Branding)
-Plan: 2 of 4 in current phase (03-02 complete)
+Plan: 3 of 4 in current phase (03-01, 03-02 complete)
 Status: Executing Phase 3
-Last activity: 2026-02-10 — Completed 03-02 (PDF template rewrite)
+Last activity: 2026-02-10 — Completed 03-01 (Dynamic section helper + read-only BriefEditor)
 
-Progress: [█████░░░░░] 50% (2/4 plans in Phase 3)
+Progress: [███████░░░] 75% (3/4 plans in Phase 3)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 8
+- Total plans completed: 9
 - Average duration: 4min
-- Total execution time: 36min
+- Total execution time: 39min
 
 **By Phase:**
 
@@ -29,10 +29,10 @@ Progress: [█████░░░░░] 50% (2/4 plans in Phase 3)
 |-------|-------|-------|----------|
 | 01 | 3/3 | 12min | 4min |
 | 02 | 3/3 | 14min | 5min |
-| 03 | 2/4 | 10min | 5min |
+| 03 | 3/4 | 13min | 4min |
 
 **Recent Trend:**
-- Last 5 plans: 02-01 (4min), 02-02 (2min), 02-03 (8min), 03-01 (5min), 03-02 (5min)
+- Last 5 plans: 02-02 (2min), 02-03 (8min), 03-02 (5min), 03-01 (3min)
 - Trend: stable
 
 *Updated after each plan completion*
@@ -64,6 +64,9 @@ Recent decisions affecting current work:
 - 02-03: MAX_ITERATIONS increased 10→25 (10 was too low for multi-tool turns)
 - 02-03: suggest_quick_replies tool — AI decides when to show quick-reply buttons
 - 02-03: Quick replies sent as SSE event after agentic loop completes
+- 03-01: BriefEditor full rewrite to read-only review (418 lines -> 200 lines)
+- 03-01: getActiveSections shared helper for BriefEditor, PDF, email template
+- 03-01: EXECUTIVE_SUMMARY_SECTION as first section (company, goal, budget, types, audience)
 - 03-02: PdfLogo uses SVG Path only (no SVG Text) — @react-pdf/renderer SVG Text + custom font problémás
 - 03-02: Section definitions duplicated for PDF (View/Text) vs HTML — separate render targets
 - 03-02: Executive Summary section at top of PDF with key fields
@@ -77,10 +80,11 @@ None.
 - ~~Phase 2: Multi-turn tool execution SSE stream-en belül~~ — RESOLVED (02-02 agentic loop)
 - Phase 3: @react-pdf/renderer conditional rendering bug — tesztelés szükséges (research flag)
 - ~~Pre-existing TS errors in pdf-template~~ — RESOLVED (03-02 flat schema rewrite)
-- Pre-existing TS errors in BriefEditor, send-brief, email-template — remaining Phase 3 scope
+- ~~Pre-existing TS errors in BriefEditor~~ — RESOLVED (03-01 full rewrite)
+- Pre-existing TS errors in send-brief, email-template — remaining Phase 3 scope
 
 ## Session Continuity
 
 Last session: 2026-02-10
-Stopped at: Completed 03-02-PLAN.md (PDF template rewrite)
-Resume file: .planning/phases/03-dynamic-report-branding/03-02-SUMMARY.md
+Stopped at: Completed 03-01-PLAN.md (Dynamic section helper + read-only BriefEditor)
+Resume file: .planning/phases/03-dynamic-report-branding/03-01-SUMMARY.md
