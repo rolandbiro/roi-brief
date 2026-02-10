@@ -60,6 +60,15 @@ export function handleToolExecution(
         updatedState: currentState,
       };
     }
+    case "complete_brief": {
+      return {
+        output: { status: "ok", message: "Brief lezárva, áttekintés gomb megjelenik" },
+        updatedState: {
+          ...currentState,
+          phase: "complete",
+        },
+      };
+    }
     default:
       return {
         output: { status: "error", message: `Ismeretlen tool: ${toolName}` },

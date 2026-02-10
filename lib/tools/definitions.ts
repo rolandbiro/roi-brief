@@ -72,4 +72,13 @@ export const TOOL_DEFINITIONS = [
       required: ["options"],
     },
   },
+  {
+    name: "complete_brief",
+    description: `Használd ezt a tool-t MIUTÁN az érdeklődő jóváhagyta az összesítőt (pl. "jó így", "oké", "stimmel", "rendben"). Ez jelzi a rendszernek, hogy a brief kész és az áttekintés gomb megjelenhet. NE hívd meg amíg az érdeklődő nem hagyta jóvá az összesítőt!`,
+    input_schema: {
+      type: "object" as const,
+      properties: {},
+      required: [],
+    },
+  },
 ];
