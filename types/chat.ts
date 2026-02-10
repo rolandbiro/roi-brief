@@ -7,7 +7,7 @@ export interface Message {
 
 export interface QuickReply {
   label: string;
-  value: string | null; // null = szabad szoveg (fokusz az input mezore)
+  value: string | null; // null = szabad szöveg (fókusz az input mezőre)
 }
 
 // Re-export BriefData from new canonical location for backward compatibility

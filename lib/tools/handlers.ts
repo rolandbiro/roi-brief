@@ -30,7 +30,7 @@ export function handleToolExecution(
       return {
         output: {
           status: "ok",
-          message: `Tipus(ok) rogzitve: ${mergedTypes.join(", ")}`,
+          message: `Típus(ok) rögzítve: ${mergedTypes.join(", ")}`,
           detected_types: mergedTypes,
         },
         updatedState: {

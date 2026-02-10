@@ -9,9 +9,9 @@ import { SocialSpecificSchema } from "./social";
 export const BriefDataSchema = BriefBaseSchema.extend({
   campaign_types: z.array(CampaignTypeEnum)
     .min(1)
-    .describe("Kampanytipus(ok) — egy vagy tobb"),
+    .describe("Kampánytípus(ok) — egy vagy több"),
   media_specific: MediaSpecificSchema.optional()
-    .describe("Mediavasarlas specifikus adatok"),
+    .describe("Médiavásárlás specifikus adatok"),
   performance_specific: PerformanceSpecificSchema.optional()
     .describe("Performance/PPC specifikus adatok"),
   brand_specific: BrandSpecificSchema.optional()
