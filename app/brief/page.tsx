@@ -16,11 +16,19 @@ export default function BriefPage() {
     streamingContent,
     briefData,
     error,
+    briefState,
     startChat,
     sendMessage,
+    requestExtraction,
     quickReplies,
     handleQuickReply,
   } = useChat();
+
+  // Show "Brief áttekintése" button when at least one campaign type is confirmed
+  const showReviewButton =
+    !briefData &&
+    !isLoading &&
+    briefState.confirmedTypes.length > 0;
 
   // Start chat automatically on mount (only once)
   useEffect(() => {
@@ -84,6 +92,36 @@ export default function BriefPage() {
             onQuickReply={handleQuickReply}
           />
         </div>
+
+        {/* Brief review button — appears when campaign type is confirmed */}
+        {showReviewButton && (
+          <div className="mt-4 flex-shrink-0 animate-scale-in">
+            <div className="relative overflow-hidden p-5 bg-gradient-to-r from-roi-orange/10 to-roi-orange/5 border border-roi-orange/30 rounded-2xl">
+              <div className="absolute -top-10 -right-10 w-32 h-32 bg-roi-orange/20 rounded-full blur-2xl" />
+              <div className="relative flex items-center justify-between gap-4">
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 rounded-xl bg-roi-orange/20 flex items-center justify-center">
+                    <svg className="w-6 h-6 text-roi-orange" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-roi-orange text-lg">Brief kész!</h3>
+                    <p className="text-sm text-roi-gray-light">
+                      Az AI összegyűjtötte az adatokat. Nézd át és küldd el.
+                    </p>
+                  </div>
+                </div>
+                <button
+                  onClick={requestExtraction}
+                  className="btn-primary whitespace-nowrap"
+                >
+                  Brief áttekintése
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
