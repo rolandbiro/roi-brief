@@ -107,7 +107,7 @@ export async function POST(request: Request) {
                 toolUseBlocks.push({
                   id: currentToolUse.id,
                   name: currentToolUse.name,
-                  input: JSON.parse(currentToolUse.partialJson),
+                  input: currentToolUse.partialJson ? JSON.parse(currentToolUse.partialJson) : {},
                 });
                 currentToolUse = null;
               }
