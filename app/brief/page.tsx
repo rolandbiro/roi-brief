@@ -24,11 +24,15 @@ export default function BriefPage() {
     handleQuickReply,
   } = useChat();
 
-  // Show "Brief áttekintése" button when at least one campaign type is confirmed
+  // Show "Brief áttekintése" button when enough data is collected
+  // confirmedTypes: AI identified the campaign type
+  // briefData field count >= 5: enough fields populated via update_brief tool
+  const briefFieldCount = Object.keys(briefState.briefData).length;
   const showReviewButton =
     !briefData &&
     !isLoading &&
-    briefState.confirmedTypes.length > 0;
+    briefState.confirmedTypes.length > 0 &&
+    briefFieldCount >= 5;
 
   // Start chat automatically on mount (only once)
   useEffect(() => {
