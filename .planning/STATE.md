@@ -5,23 +5,23 @@
 See: .planning/PROJECT.md (updated 2026-02-10)
 
 **Core value:** Az AI asszisztens kampánytípustól függően releváns, szakmai mélységű kérdéseket tesz fel — adaptív kikérdezés, ami profi briefté áll össze.
-**Current focus:** Phase 2 complete — ready for Phase 3
+**Current focus:** Phase 3 in progress — PDF template + branding
 
 ## Current Position
 
-Phase: 2 of 3 (Adaptive Questioning Engine)
-Plan: 3 of 3 in current phase (all plans complete)
-Status: Phase 2 complete, verified (5/5 must-haves after accent fix)
-Last activity: 2026-02-10 — Phase 2 verified and complete
+Phase: 3 of 3 (Dynamic Report & Branding)
+Plan: 2 of 4 in current phase (03-02 complete)
+Status: Executing Phase 3
+Last activity: 2026-02-10 — Completed 03-02 (PDF template rewrite)
 
-Progress: [██████████] 100% (3/3 plans in Phase 2)
+Progress: [█████░░░░░] 50% (2/4 plans in Phase 3)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 6
+- Total plans completed: 8
 - Average duration: 4min
-- Total execution time: 26min
+- Total execution time: 36min
 
 **By Phase:**
 
@@ -29,10 +29,11 @@ Progress: [██████████] 100% (3/3 plans in Phase 2)
 |-------|-------|-------|----------|
 | 01 | 3/3 | 12min | 4min |
 | 02 | 3/3 | 14min | 5min |
+| 03 | 2/4 | 10min | 5min |
 
 **Recent Trend:**
-- Last 5 plans: 01-03 (5min), 02-01 (4min), 02-02 (2min), 02-03 (8min)
-- Trend: stable (02-03 longer due to checkpoint + bugfix)
+- Last 5 plans: 02-01 (4min), 02-02 (2min), 02-03 (8min), 03-01 (5min), 03-02 (5min)
+- Trend: stable
 
 *Updated after each plan completion*
 
@@ -63,6 +64,9 @@ Recent decisions affecting current work:
 - 02-03: MAX_ITERATIONS increased 10→25 (10 was too low for multi-tool turns)
 - 02-03: suggest_quick_replies tool — AI decides when to show quick-reply buttons
 - 02-03: Quick replies sent as SSE event after agentic loop completes
+- 03-02: PdfLogo uses SVG Path only (no SVG Text) — @react-pdf/renderer SVG Text + custom font problémás
+- 03-02: Section definitions duplicated for PDF (View/Text) vs HTML — separate render targets
+- 03-02: Executive Summary section at top of PDF with key fields
 
 ### Pending Todos
 
@@ -72,10 +76,11 @@ None.
 
 - ~~Phase 2: Multi-turn tool execution SSE stream-en belül~~ — RESOLVED (02-02 agentic loop)
 - Phase 3: @react-pdf/renderer conditional rendering bug — tesztelés szükséges (research flag)
-- Pre-existing TS errors in BriefEditor, pdf-template, send-brief — Phase 3 scope
+- ~~Pre-existing TS errors in pdf-template~~ — RESOLVED (03-02 flat schema rewrite)
+- Pre-existing TS errors in BriefEditor, send-brief, email-template — remaining Phase 3 scope
 
 ## Session Continuity
 
 Last session: 2026-02-10
-Stopped at: Phase 2 verified and complete, ready for Phase 3 planning
-Resume file: .planning/phases/02-adaptive-questioning-engine/02-VERIFICATION.md
+Stopped at: Completed 03-02-PLAN.md (PDF template rewrite)
+Resume file: .planning/phases/03-dynamic-report-branding/03-02-SUMMARY.md
