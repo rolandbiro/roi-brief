@@ -23,7 +23,7 @@ See: `.planning/milestones/v1.0-ROADMAP.md` for full details.
 **Milestone Goal:** Az ügyfél-oldali adatgyűjtés bővítése az Agency Brief template összes üzleti mezőjével, jóváhagyás után AI háttérkutatás a technikai adatokhoz, és kitöltött xlsx fájlok küldése a PM-nek.
 
 - [x] **Phase 4: Bővített adatgyűjtés és jóváhagyás** — Ügyfél oldali teljes flow: kibővített chat kikérdezés + jóváhagyási képernyő (completed 2026-02-12)
-- [ ] **Phase 5: AI háttérkutatás** — Szerver oldali research pipeline: csatorna mix, targeting, KPI becslés
+- [x] **Phase 5: AI háttérkutatás** — Szerver oldali research pipeline: csatorna mix, targeting, KPI becslés (completed 2026-02-12)
 - [ ] **Phase 6: Xlsx generálás és PM delivery** — Kitöltött xlsx template-ek előállítása és emailben küldése a PM-nek
 
 ## Phase Details
@@ -58,8 +58,8 @@ Plans:
 **Plans**: 2 plans
 
 Plans:
-- [ ] 05-01-PLAN.md — ResearchResults Zod schema, template mapper, research prompt-ok
-- [ ] 05-02-PLAN.md — Web search + structured output pipeline, approve route bekötés
+- [x] 05-01-PLAN.md — ResearchResults Zod schema, template mapper, research prompt-ok
+- [x] 05-02-PLAN.md — Web search + structured output pipeline, approve route bekötés
 
 ### Phase 6: Xlsx generálás és PM delivery
 **Goal**: A rendszer programmatikusan kitölti az Agency Brief és Mediaplan xlsx template-eket, majd emailben elküldi a PM-nek — a teljes pipeline hiba esetén a PM értesítést kap.
@@ -87,5 +87,5 @@ Phases execute in numeric order: 4 → 5 → 6
 | 2. Adaptive Questioning Engine | v1.0 | 3/3 | ✅ Complete | 2026-02-10 |
 | 3. Dynamic Report & Branding | v1.0 | 4/4 | ✅ Complete | 2026-02-10 |
 | 4. Bővített adatgyűjtés és jóváhagyás | v1.1 | 3/3 | ✅ Complete | 2026-02-12 |
-| 5. AI háttérkutatás | v1.1 | 0/2 | Planned | - |
+| 5. AI háttérkutatás | v1.1 | 2/2 | ✅ Complete | 2026-02-12 |
 | 6. Xlsx generálás és PM delivery | v1.1 | 0/2 | Not started | - |
