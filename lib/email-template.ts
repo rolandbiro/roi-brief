@@ -1,124 +1,14 @@
 import type { BriefData, CampaignType } from "@/types/brief";
 import { CAMPAIGN_TYPE_LABELS } from "@/types/brief";
-
-// --- Utility helpers (inline for HTML string generation) ---
-
-function hasValue(val: unknown): boolean {
-  if (val === null || val === undefined || val === "") return false;
-  if (Array.isArray(val)) return val.length > 0;
-  return true;
-}
-
-function getNestedValue(obj: Record<string, unknown>, path: string): unknown {
-  return path.split(".").reduce<unknown>((acc, key) => {
-    if (acc && typeof acc === "object" && key in (acc as Record<string, unknown>)) {
-      return (acc as Record<string, unknown>)[key];
-    }
-    return undefined;
-  }, obj);
-}
-
-function formatValue(val: unknown): string {
-  if (Array.isArray(val)) return val.join(", ");
-  return String(val);
-}
-
-// --- Section definitions (duplicated from brief-sections.ts — necessary because we generate HTML strings, not React) ---
-
-interface FieldDef {
-  label: string;
-  path: string;
-}
-
-interface SectionDef {
-  title: string;
-  fields: FieldDef[];
-}
-
-const EXECUTIVE_SUMMARY: SectionDef = {
-  title: "Összefoglaló",
-  fields: [
-    { label: "Cégnév", path: "company_name" },
-    { label: "Kampány célja", path: "campaign_goal" },
-    { label: "Büdzsé", path: "budget_range" },
-    { label: "Célcsoport", path: "target_audience" },
-  ],
-};
-
-const BASE_SECTIONS: SectionDef[] = [
-  {
-    title: "Cégadatok",
-    fields: [
-      { label: "Cégnév", path: "company_name" },
-      { label: "Iparág", path: "industry" },
-    ],
-  },
-  {
-    title: "Kampány",
-    fields: [
-      { label: "Kampány célja", path: "campaign_goal" },
-      { label: "Időzítés", path: "timing" },
-      { label: "Büdzsé", path: "budget_range" },
-      { label: "Célcsoport", path: "target_audience" },
-    ],
-  },
-  {
-    title: "Egyéb",
-    fields: [
-      { label: "Meglévő anyagok", path: "existing_materials" },
-      { label: "Korábbi kampányok", path: "previous_campaigns" },
-      { label: "Versenytársak", path: "competitors" },
-      { label: "Megjegyzések", path: "notes" },
-    ],
-  },
-];
-
-const TYPE_SECTIONS: Record<CampaignType, SectionDef> = {
-  media_buying: {
-    title: "Médiavásárlás részletek",
-    fields: [
-      { label: "Célzott GRP", path: "media_specific.grp_target" },
-      { label: "Elvárt elérés", path: "media_specific.reach_target" },
-      { label: "Frekvencia limit", path: "media_specific.frequency_cap" },
-      { label: "Médiatípusok", path: "media_specific.media_types" },
-      { label: "Napszak preferenciák", path: "media_specific.daypart_preferences" },
-      { label: "Viewability elvárások", path: "media_specific.viewability_requirements" },
-    ],
-  },
-  performance_ppc: {
-    title: "Performance/PPC részletek",
-    fields: [
-      { label: "Cél ROAS", path: "performance_specific.target_roas" },
-      { label: "Cél CPA", path: "performance_specific.target_cpa" },
-      { label: "Konverziós események", path: "performance_specific.conversion_events" },
-      { label: "Landing page-ek", path: "performance_specific.landing_pages" },
-      { label: "Hirdetési fiókok", path: "performance_specific.ad_accounts" },
-      { label: "Attribúciós modell", path: "performance_specific.attribution_model" },
-    ],
-  },
-  brand_awareness: {
-    title: "Brand/Awareness részletek",
-    fields: [
-      { label: "Brand lift cél", path: "brand_specific.brand_lift_target" },
-      { label: "Üzenetrecall cél", path: "brand_specific.message_recall_target" },
-      { label: "Kreatív koncepció", path: "brand_specific.creative_concept" },
-      { label: "Hangvétel", path: "brand_specific.tonality" },
-      { label: "Pozicionálás", path: "brand_specific.positioning" },
-      { label: "Awareness csatornák", path: "brand_specific.awareness_channels" },
-    ],
-  },
-  social_media: {
-    title: "Social Media részletek",
-    fields: [
-      { label: "Organikus/paid arány", path: "social_specific.organic_paid_mix" },
-      { label: "Platformok", path: "social_specific.platforms" },
-      { label: "Tartalomtípusok", path: "social_specific.content_types" },
-      { label: "Közösségkezelés", path: "social_specific.community_management" },
-      { label: "Influencer terv", path: "social_specific.influencer_plan" },
-      { label: "Posztolási gyakoriság", path: "social_specific.posting_frequency" },
-    ],
-  },
-};
+import {
+  AGENCY_BRIEF_SECTIONS,
+  TYPE_SECTIONS,
+  hasValue,
+  getNestedValue,
+  formatValue,
+  formatCampaignTypes,
+  type SectionDef,
+} from "@/lib/brief-sections";
 
 // --- HTML generation ---
 
@@ -128,15 +18,14 @@ function renderSectionHtml(
   bgColor: string,
 ): string {
   const filledFields = section.fields.filter((f) =>
-    hasValue(getNestedValue(dataRecord, f.path)),
+    hasValue(getNestedValue(dataRecord, f.key)),
   );
   if (filledFields.length === 0) return "";
 
   const rows = filledFields
     .map((f) => {
-      const val = getNestedValue(dataRecord, f.path);
-      // campaign_types special formatting
-      if (f.path === "campaign_types" && Array.isArray(val)) {
+      const val = getNestedValue(dataRecord, f.key);
+      if (f.key === "campaign_types" && Array.isArray(val)) {
         const formatted = val
           .map((t: string) => CAMPAIGN_TYPE_LABELS[t as CampaignType] ?? t)
           .join(", ");
@@ -147,7 +36,7 @@ function renderSectionHtml(
       }
       return `<tr>
         <td style="padding: 5px 0; color: #3C3E43; font-size: 13px; width: 140px;">${f.label}:</td>
-        <td style="padding: 5px 0; color: #2A2B2E; font-size: 13px;">${formatValue(val)}</td>
+        <td style="padding: 5px 0; color: #2A2B2E; font-size: 13px;">${formatValue(val) ?? ""}</td>
       </tr>`;
     })
     .join("");
@@ -173,7 +62,6 @@ export function generateEmailHtml(data: BriefData, clientEmail?: string): string
 
   const dataRecord = data as unknown as Record<string, unknown>;
 
-  // Campaign type badges
   const badges = data.campaign_types
     .map(
       (type) =>
@@ -181,15 +69,12 @@ export function generateEmailHtml(data: BriefData, clientEmail?: string): string
     )
     .join("");
 
-  // Collect type-specific sections
   const typeSections = data.campaign_types
     .map((type) => TYPE_SECTIONS[type])
     .filter(Boolean);
 
-  // Render all sections, alternating background
   const allSections: SectionDef[] = [
-    EXECUTIVE_SUMMARY,
-    ...BASE_SECTIONS,
+    ...AGENCY_BRIEF_SECTIONS,
     ...typeSections,
   ];
 
@@ -203,7 +88,6 @@ export function generateEmailHtml(data: BriefData, clientEmail?: string): string
     })
     .join("");
 
-  // Client email info row (for ROI Works team reference)
   const clientEmailRow = clientEmail
     ? `<tr>
         <td style="padding: 15px 30px; background-color: #FFF8F0; border-bottom: 2px solid #FF6400;">

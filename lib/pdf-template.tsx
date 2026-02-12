@@ -9,6 +9,15 @@ import "@/lib/pdf-fonts";
 import { PdfLogo } from "@/lib/pdf-logo";
 import type { BriefData, CampaignType } from "@/types/brief";
 import { CAMPAIGN_TYPE_LABELS } from "@/types/brief";
+import {
+  AGENCY_BRIEF_SECTIONS,
+  TYPE_SECTIONS,
+  hasValue,
+  getNestedValue,
+  formatValue,
+  type FieldDef,
+  type SectionDef,
+} from "@/lib/brief-sections";
 
 const colors = {
   orange: "#FF6400",
@@ -107,136 +116,19 @@ const styles = StyleSheet.create({
   },
 });
 
-// --- Utility functions ---
-
-function hasValue(val: unknown): boolean {
-  if (val === null || val === undefined || val === "") return false;
-  if (Array.isArray(val)) return val.length > 0;
-  return true;
-}
-
-function getNestedValue(obj: Record<string, unknown>, path: string): unknown {
-  return path.split(".").reduce<unknown>((acc, key) => {
-    if (acc && typeof acc === "object" && key in (acc as Record<string, unknown>)) {
-      return (acc as Record<string, unknown>)[key];
-    }
-    return undefined;
-  }, obj);
-}
-
-function formatValue(val: unknown): string {
-  if (Array.isArray(val)) return val.join(", ");
-  return String(val);
-}
-
-// --- Section definitions ---
-
-interface FieldDef {
-  label: string;
-  path: string;
-}
-
-interface SectionDef {
-  title: string;
-  fields: FieldDef[];
-}
-
-const EXECUTIVE_SUMMARY: SectionDef = {
-  title: "Executive Summary",
-  fields: [
-    { label: "Cégnév", path: "company_name" },
-    { label: "Kampány célja", path: "campaign_goal" },
-    { label: "Büdzsékeret", path: "budget_range" },
-    { label: "Célcsoport", path: "target_audience" },
-  ],
-};
-
-const BASE_SECTIONS: SectionDef[] = [
-  {
-    title: "Alapadatok",
-    fields: [
-      { label: "Cégnév", path: "company_name" },
-      { label: "Iparág", path: "industry" },
-      { label: "Kampány célja", path: "campaign_goal" },
-      { label: "Időzítés", path: "timing" },
-      { label: "Büdzsékeret", path: "budget_range" },
-      { label: "Célcsoport", path: "target_audience" },
-      { label: "Meglévő anyagok", path: "existing_materials" },
-      { label: "Korábbi kampányok", path: "previous_campaigns" },
-      { label: "Versenytársak", path: "competitors" },
-      { label: "Megjegyzések", path: "notes" },
-    ],
-  },
-];
-
-const TYPE_SECTIONS: Record<CampaignType, SectionDef[]> = {
-  media_buying: [
-    {
-      title: "Médiavásárlás",
-      fields: [
-        { label: "Célzott GRP", path: "media_specific.grp_target" },
-        { label: "Elvárt elérés", path: "media_specific.reach_target" },
-        { label: "Frekvencia limit", path: "media_specific.frequency_cap" },
-        { label: "Médiatípusok", path: "media_specific.media_types" },
-        { label: "Napszak preferenciák", path: "media_specific.daypart_preferences" },
-        { label: "Viewability elvárások", path: "media_specific.viewability_requirements" },
-      ],
-    },
-  ],
-  performance_ppc: [
-    {
-      title: "Performance / PPC",
-      fields: [
-        { label: "Cél ROAS", path: "performance_specific.target_roas" },
-        { label: "Cél CPA", path: "performance_specific.target_cpa" },
-        { label: "Konverziós események", path: "performance_specific.conversion_events" },
-        { label: "Landing page-ek", path: "performance_specific.landing_pages" },
-        { label: "Hirdetési fiókok", path: "performance_specific.ad_accounts" },
-        { label: "Attribúciós modell", path: "performance_specific.attribution_model" },
-      ],
-    },
-  ],
-  brand_awareness: [
-    {
-      title: "Brand / Awareness",
-      fields: [
-        { label: "Brand lift cél", path: "brand_specific.brand_lift_target" },
-        { label: "Üzenetrecall cél", path: "brand_specific.message_recall_target" },
-        { label: "Kreatív koncepció", path: "brand_specific.creative_concept" },
-        { label: "Hangvétel", path: "brand_specific.tonality" },
-        { label: "Pozicionálás", path: "brand_specific.positioning" },
-        { label: "Awareness csatornák", path: "brand_specific.awareness_channels" },
-      ],
-    },
-  ],
-  social_media: [
-    {
-      title: "Social Media",
-      fields: [
-        { label: "Organikus/paid arány", path: "social_specific.organic_paid_mix" },
-        { label: "Platformok", path: "social_specific.platforms" },
-        { label: "Tartalom típusok", path: "social_specific.content_types" },
-        { label: "Közösségkezelés", path: "social_specific.community_management" },
-        { label: "Influencer terv", path: "social_specific.influencer_plan" },
-        { label: "Posztolási gyakoriság", path: "social_specific.posting_frequency" },
-      ],
-    },
-  ],
-};
-
 // --- Components ---
 
 function SectionView({ section, data }: { section: SectionDef; data: Record<string, unknown> }) {
-  const filledFields = section.fields.filter((f) => hasValue(getNestedValue(data, f.path)));
+  const filledFields = section.fields.filter((f) => hasValue(getNestedValue(data, f.key)));
   if (filledFields.length === 0) return null;
 
   return (
     <View style={styles.section}>
       <Text style={styles.sectionTitle}>{section.title}</Text>
       {filledFields.map((field) => (
-        <View key={field.path} style={styles.row}>
+        <View key={field.key} style={styles.row}>
           <Text style={styles.label}>{field.label}:</Text>
-          <Text style={styles.value}>{formatValue(getNestedValue(data, field.path))}</Text>
+          <Text style={styles.value}>{formatValue(getNestedValue(data, field.key)) ?? ""}</Text>
         </View>
       ))}
     </View>
@@ -256,9 +148,9 @@ export function BriefPDF({ data }: BriefPDFProps) {
 
   const dataRecord = data as unknown as Record<string, unknown>;
 
-  const typeSections = data.campaign_types.flatMap(
-    (type) => TYPE_SECTIONS[type] ?? []
-  );
+  const typeSections = data.campaign_types
+    .map((type) => TYPE_SECTIONS[type])
+    .filter(Boolean);
 
   return (
     <Document>
@@ -285,11 +177,8 @@ export function BriefPDF({ data }: BriefPDFProps) {
           ))}
         </View>
 
-        {/* Executive Summary */}
-        <SectionView section={EXECUTIVE_SUMMARY} data={dataRecord} />
-
-        {/* Base sections */}
-        {BASE_SECTIONS.map((section) => (
+        {/* Agency Brief sections */}
+        {AGENCY_BRIEF_SECTIONS.map((section) => (
           <SectionView key={section.title} section={section} data={dataRecord} />
         ))}
 

@@ -35,39 +35,72 @@ export function formatValue(value: unknown): string | null {
   return String(value);
 }
 
-function formatCampaignTypes(types: string[] | undefined): string | null {
+export function formatCampaignTypes(types: string[] | undefined): string | null {
   if (!types || types.length === 0) return null;
   return types
     .map((t) => CAMPAIGN_TYPE_LABELS[t as CampaignType] ?? t)
     .join(", ");
 }
 
-export const EXECUTIVE_SUMMARY_SECTION: SectionDef = {
-  title: "Összefoglaló",
-  fields: [
-    { key: "company_name", label: "Cégnév" },
-    { key: "campaign_goal", label: "Kampány célja" },
-    { key: "budget_range", label: "Büdzsé" },
-    { key: "campaign_types", label: "Kampánytípusok" },
-    { key: "target_audience", label: "Célcsoport" },
-  ],
-};
-
-export const BASE_SECTIONS: SectionDef[] = [
+export const AGENCY_BRIEF_SECTIONS: SectionDef[] = [
   {
-    title: "Cégadatok",
+    title: "Alapvető információk",
     fields: [
       { key: "company_name", label: "Cégnév" },
-      { key: "industry", label: "Iparág" },
+      { key: "contact_name", label: "Kapcsolattartó" },
+      { key: "industry", label: "Tevékenységi kör" },
+      { key: "brand_positioning", label: "Márka pozicionálás" },
     ],
   },
   {
-    title: "Kampány",
+    title: "Kampány részletek",
     fields: [
+      { key: "campaign_name", label: "Kampány neve" },
+      { key: "campaign_types", label: "Kampánytípusok" },
       { key: "campaign_goal", label: "Kampány célja" },
-      { key: "timing", label: "Időzítés" },
+      { key: "main_message", label: "Fő üzenet" },
+      { key: "communication_style", label: "Kommunikációs stílus" },
+      { key: "creative_source", label: "Kreatívok forrása" },
+      { key: "creative_types", label: "Kreatív típusok" },
+    ],
+  },
+  {
+    title: "Csatornák és mérés",
+    fields: [
+      { key: "ad_channels", label: "Hirdetési csatornák" },
+      { key: "kpis", label: "KPI-k" },
+    ],
+  },
+  {
+    title: "Célcsoport",
+    fields: [
+      { key: "gender", label: "Nem" },
+      { key: "age_range", label: "Kor" },
+      { key: "location", label: "Lakóhely" },
+      { key: "psychographics", label: "Érdeklődés, szokások" },
+      { key: "persona", label: "Persona" },
+    ],
+  },
+  {
+    title: "Időzítés",
+    fields: [
+      { key: "start_date", label: "Indulás" },
+      { key: "end_date", label: "Zárás" },
+      { key: "key_events", label: "Fontos események" },
+    ],
+  },
+  {
+    title: "Költségvetés",
+    fields: [
       { key: "budget_range", label: "Büdzsé" },
-      { key: "target_audience", label: "Célcsoport" },
+      { key: "budget_allocation", label: "Platformonkénti elosztás" },
+    ],
+  },
+  {
+    title: "Versenytársak",
+    fields: [
+      { key: "competitors", label: "Fő versenytársak" },
+      { key: "inspiring_campaigns", label: "Inspiráló kampányok" },
     ],
   },
   {
@@ -75,7 +108,6 @@ export const BASE_SECTIONS: SectionDef[] = [
     fields: [
       { key: "existing_materials", label: "Meglévő anyagok" },
       { key: "previous_campaigns", label: "Korábbi kampányok" },
-      { key: "competitors", label: "Versenytársak" },
       { key: "notes", label: "Megjegyzések" },
     ],
   },
@@ -165,8 +197,7 @@ export function getActiveSections(
   const dataRecord = data as unknown as Record<string, unknown>;
 
   const allSections: SectionDef[] = [
-    EXECUTIVE_SUMMARY_SECTION,
-    ...BASE_SECTIONS,
+    ...AGENCY_BRIEF_SECTIONS,
     ...Object.entries(TYPE_SECTIONS)
       .filter(([, section]) => !section.condition || section.condition(data))
       .map(([, section]) => section),
