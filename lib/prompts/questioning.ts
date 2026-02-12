@@ -90,6 +90,7 @@ MOST EZT CSINÁLD:
 
   strategy += `
 TÍPUSMEGERŐSÍTÉS:
+- A classify_campaign tool-t CSAK akkor hívd, ha az érdeklődő a KAMPÁNY CÉLJÁT vagy TÍPUSÁT mondta el — NE a cége/terméke leírása alapján
 - Ha high confidence: természetesen sződd bele a válaszodba ("Értem, szóval egy ${activeTypes.length > 0 ? typeLabels : "..."} kampányra gondolsz...")
 - Ha medium/low: kérdezz rá finoman
 - Ha az érdeklődő javít: fogadd el természetesen
