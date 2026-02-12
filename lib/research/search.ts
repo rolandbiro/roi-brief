@@ -27,12 +27,6 @@ export async function runWebSearch(
           type: "web_search_20250305" as const,
           name: "web_search",
           max_uses: 5,
-          user_location: {
-            type: "approximate" as const,
-            country: "HU",
-            city: "Budapest",
-            timezone: "Europe/Budapest",
-          },
         },
       ],
     });
