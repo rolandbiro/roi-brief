@@ -15,6 +15,7 @@ export default function BriefPage() {
     isLoading,
     streamingContent,
     briefData,
+    setBriefData,
     error,
     briefState,
     startChat,
@@ -43,8 +44,12 @@ export default function BriefPage() {
     router.push("/");
   };
 
+  const handleBackToChat = () => {
+    setBriefData(null);
+  };
+
   if (briefData) {
-    return <BriefEditor initialData={briefData} />;
+    return <BriefEditor initialData={briefData} onBackToChat={handleBackToChat} />;
   }
 
   return (

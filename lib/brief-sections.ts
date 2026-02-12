@@ -193,7 +193,7 @@ export const TYPE_SECTIONS: Record<CampaignType, SectionDef> = {
 
 export function getActiveSections(
   data: BriefData,
-): Array<{ title: string; fields: Array<{ label: string; value: string }> }> {
+): Array<{ title: string; fields: Array<{ key: string; label: string; value: string }> }> {
   const dataRecord = data as unknown as Record<string, unknown>;
 
   const allSections: SectionDef[] = [
@@ -213,7 +213,7 @@ export function getActiveSections(
             f.key === "campaign_types"
               ? formatCampaignTypes(raw as string[] | undefined)
               : formatValue(raw);
-          return { label: f.label, value: value! };
+          return { key: f.key, label: f.label, value: value! };
         })
         .filter((f) => f.value !== null && f.value !== undefined),
     }))

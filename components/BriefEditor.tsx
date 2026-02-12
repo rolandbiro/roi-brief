@@ -3,45 +3,49 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { BriefData, CAMPAIGN_TYPE_LABELS, CampaignType } from "@/types/brief";
-import { getActiveSections } from "@/lib/brief-sections";
+import {
+  getActiveSections,
+  getNestedValue,
+  hasValue,
+} from "@/lib/brief-sections";
+
+const BADGE_FIELDS = new Set([
+  "campaign_types",
+  "ad_channels",
+  "kpis",
+  "creative_source",
+  "creative_types",
+  "gender",
+]);
 
 interface BriefEditorProps {
   initialData: BriefData;
+  onBackToChat: () => void;
 }
 
-export function BriefEditor({ initialData }: BriefEditorProps) {
+export function BriefEditor({ initialData, onBackToChat }: BriefEditorProps) {
   const router = useRouter();
   const [briefData] = useState<BriefData>(initialData);
-  const [clientEmail, setClientEmail] = useState("");
-  const [isSending, setIsSending] = useState(false);
-  const [isSuccess, setIsSuccess] = useState(false);
+  const [isApproving, setIsApproving] = useState(false);
+  const [isApproved, setIsApproved] = useState(false);
   const [pdfDownloading, setPdfDownloading] = useState(false);
 
   const sections = getActiveSections(briefData);
 
-  const handleSend = async () => {
-    if (!clientEmail) {
-      alert("Add meg az email címed!");
-      return;
-    }
-
-    setIsSending(true);
-
+  const handleApprove = async () => {
+    setIsApproving(true);
     try {
-      const response = await fetch("/api/send-brief", {
+      const response = await fetch("/api/approve", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ briefData, clientEmail }),
+        body: JSON.stringify({ briefData }),
       });
-
-      if (!response.ok) throw new Error("Failed to send brief");
-
-      setIsSuccess(true);
+      if (!response.ok) throw new Error("Approval failed");
+      setIsApproved(true);
     } catch (error) {
-      console.error("Error sending brief:", error);
-      alert("Hiba történt a brief küldése során. Kérlek, próbáld újra.");
-    } finally {
-      setIsSending(false);
+      console.error("Error approving brief:", error);
+      alert("Hiba történt a jóváhagyás során. Kérlek, próbáld újra.");
+      setIsApproving(false);
     }
   };
 
@@ -72,7 +76,7 @@ export function BriefEditor({ initialData }: BriefEditorProps) {
     }
   };
 
-  if (isSuccess) {
+  if (isApproved) {
     return (
       <div className="container mx-auto px-6 py-12">
         <div className="max-w-2xl mx-auto text-center animate-fade-in-up">
@@ -100,9 +104,8 @@ export function BriefEditor({ initialData }: BriefEditorProps) {
             <span className="text-roi-orange">Köszönjük!</span>
           </h1>
           <p className="text-xl text-roi-gray-light mb-8 leading-relaxed">
-            A brief sikeresen elküldve a ROI Works csapatnak.
-            <br />
-            Hamarosan felvesszük veled a kapcsolatot!
+            A briefet sikeresen rögzítettük. A ROI Works projekt menedzser
+            hamarosan felveszi Veled a kapcsolatot az ajánlat részleteivel.
           </p>
 
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
@@ -111,7 +114,7 @@ export function BriefEditor({ initialData }: BriefEditorProps) {
               disabled={pdfDownloading}
               className="btn-primary text-lg px-8 py-4 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {pdfDownloading ? "PDF letöltés..." : "PDF letöltés"}
+              {pdfDownloading ? "PDF letöltés..." : "PDF letöltése"}
             </button>
             <button
               onClick={() => router.push("/")}
@@ -146,13 +149,23 @@ export function BriefEditor({ initialData }: BriefEditorProps) {
       <div className="max-w-4xl mx-auto">
         {/* Header */}
         <div className="mb-8 animate-fade-in-up">
-          <h1 className="text-2xl font-black">
-            Brief <span className="text-roi-orange">áttekintése</span>
-          </h1>
-          <p className="text-sm text-roi-gray-light mt-1">
-            Nézd át a brief adatokat, és ha minden rendben, hagyd jóvá és küldd
-            el.
-          </p>
+          <div className="flex items-start justify-between">
+            <div>
+              <h1 className="text-2xl font-black">
+                Brief <span className="text-roi-orange">áttekintése</span>
+              </h1>
+              <p className="text-sm text-roi-gray-light mt-1">
+                Nézd át az összegyűjtött adatokat. Ha minden rendben van, hagyd
+                jóvá a briefet.
+              </p>
+            </div>
+            <button
+              onClick={onBackToChat}
+              className="btn-secondary text-sm flex-shrink-0"
+            >
+              Vissza a chatbe
+            </button>
+          </div>
           {/* Campaign type badges */}
           {briefData.campaign_types && briefData.campaign_types.length > 0 && (
             <div className="flex flex-wrap gap-2 mt-3">
@@ -183,21 +196,49 @@ export function BriefEditor({ initialData }: BriefEditorProps) {
                 {section.title}
               </h2>
               <div className="space-y-3">
-                {section.fields.map((field) => (
-                  <div key={field.label}>
-                    <span className="block text-[13px] text-roi-gray-light">
-                      {field.label}
-                    </span>
-                    <span className="block text-[13px] text-white">
-                      {field.value}
-                    </span>
-                  </div>
-                ))}
+                {section.fields.map((field) => {
+                  const rawValue = getNestedValue(
+                    briefData as unknown as Record<string, unknown>,
+                    field.key
+                  );
+                  const isBadgeField =
+                    BADGE_FIELDS.has(field.key) &&
+                    Array.isArray(rawValue) &&
+                    hasValue(rawValue);
+
+                  return (
+                    <div key={field.label}>
+                      <span className="block text-[13px] text-roi-gray-light">
+                        {field.label}
+                      </span>
+                      {isBadgeField ? (
+                        <div className="flex flex-wrap gap-1.5 mt-1">
+                          {(rawValue as string[]).map((item) => (
+                            <span
+                              key={item}
+                              className="px-3 py-1 text-[13px] rounded-full bg-roi-orange/20 text-white"
+                            >
+                              {field.key === "campaign_types"
+                                ? (CAMPAIGN_TYPE_LABELS[
+                                    item as CampaignType
+                                  ] ?? item)
+                                : item}
+                            </span>
+                          ))}
+                        </div>
+                      ) : (
+                        <span className="block text-[13px] text-white">
+                          {field.value}
+                        </span>
+                      )}
+                    </div>
+                  );
+                })}
               </div>
             </section>
           ))}
 
-          {/* Email input */}
+          {/* Approval block */}
           <section
             className="card border-2 border-roi-orange animate-fade-in-up relative overflow-hidden"
             style={{
@@ -209,36 +250,17 @@ export function BriefEditor({ initialData }: BriefEditorProps) {
             <h2 className="text-xl font-bold mb-4 text-roi-orange relative">
               Jóváhagyás
             </h2>
-            <div className="mb-4 relative">
-              <label className="block text-sm text-roi-gray-light mb-1">
-                Add meg az email címed, hogy a ROI Works csapat elérhessen
-              </label>
-              <input
-                type="email"
-                value={clientEmail}
-                onChange={(e) => setClientEmail(e.target.value)}
-                placeholder="email@pelda.hu"
-                className="w-full bg-roi-gray-dark border border-roi-gray-light/30 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-roi-orange"
-              />
-            </div>
-            <div className="flex flex-col gap-3 relative">
-              <button
-                onClick={handleSend}
-                disabled={isSending || !clientEmail}
-                className="btn-primary w-full text-lg py-4 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {isSending
-                  ? "Küldés folyamatban..."
-                  : "Jóváhagyás és küldés"}
-              </button>
-              <button
-                onClick={handleDownloadPdf}
-                disabled={pdfDownloading}
-                className="btn-secondary w-full text-lg py-4 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {pdfDownloading ? "PDF letöltés..." : "PDF letöltés"}
-              </button>
-            </div>
+            <p className="text-sm text-roi-gray-light mb-4 relative">
+              Ha az adatok rendben vannak, a Jóváhagyom gombbal véglegesítheted
+              a briefet.
+            </p>
+            <button
+              onClick={handleApprove}
+              disabled={isApproving}
+              className="btn-primary w-full text-lg py-4 disabled:opacity-50 disabled:cursor-not-allowed relative"
+            >
+              {isApproving ? "Feldolgozás..." : "Jóváhagyom"}
+            </button>
           </section>
         </div>
       </div>
