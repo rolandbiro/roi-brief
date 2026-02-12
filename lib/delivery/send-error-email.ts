@@ -11,7 +11,7 @@ export async function sendErrorEmail(
   sgMail.setApiKey(process.env.SENDGRID_API_KEY!);
 
   const companyName = briefData.company_name;
-  const campaignName = briefData.campaign_name || `${companyName} kampany`;
+  const campaignName = briefData.campaign_name || `${companyName} kampány`;
   const retryUrl = `${process.env.NEXT_PUBLIC_APP_URL}/api/retry/${retryToken}`;
 
   const ccRaw = process.env.PM_CC_EMAILS?.split(",")
@@ -20,19 +20,19 @@ export async function sendErrorEmail(
   const cc = ccRaw && ccRaw.length > 0 ? ccRaw : undefined;
 
   const text = [
-    `Hiba tortent a brief feldolgozas soran.`,
+    `Hiba történt a brief feldolgozás során.`,
     ``,
-    `Ugyfél: ${companyName}`,
-    `Kampany: ${campaignName}`,
+    `Ügyfél: ${companyName}`,
+    `Kampány: ${campaignName}`,
     ``,
-    `Hibas lepes: ${failedStep}`,
+    `Hibás lépés: ${failedStep}`,
     `Hiba: ${errorMessage}`,
     ``,
     partialXlsx
-      ? `A reszben elkeszult xlsx csatolva. A ${failedStep} lepes nem sikerult.`
-      : `Az xlsx generalas nem keszult el.`,
+      ? `A részben elkészült xlsx csatolva. A ${failedStep} lépés nem sikerült.`
+      : `Az xlsx generálás nem készült el.`,
     ``,
-    `Ujraprobalhato az alabbi linkre kuldott POST keréssel:`,
+    `Újrapróbálható az alábbi linkre küldött POST kéréssel:`,
     retryUrl,
   ].join("\n");
 
