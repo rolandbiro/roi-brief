@@ -38,12 +38,12 @@ See: `.planning/milestones/v1.0-ROADMAP.md` for full details.
   3. A BriefEditor megjeleníti az összes összegyűjtött adatot az Agency Brief struktúra szerint, és az ügyfél "Jóváhagyom" gombbal véglegesíti (email cím nélkül)
   4. Jóváhagyás után az ügyfél letöltheti a PDF-et és "Köszönjük" oldalt kap — a session véget ér számára
   5. A jóváhagyás triggereli a háttér AI kutatást (a szerver elkezdi a research pipeline-t)
-**Plans**: TBD
+**Plans**: 3 plans
 
 Plans:
-- [ ] 04-01: TBD
-- [ ] 04-02: TBD
-- [ ] 04-03: TBD
+- [ ] 04-01-PLAN.md — Séma bővítés + szekció centralizálás + tool/extraction frissítés
+- [ ] 04-02-PLAN.md — Prompt rendszer átírás (base + questioning + type modulok)
+- [ ] 04-03-PLAN.md — BriefEditor read-only jóváhagyás + approve API + köszönő oldal
 
 ### Phase 5: AI háttérkutatás
 **Goal**: A szerver a jóváhagyott brief alapján háttérben AI kutatást futtat — csatorna mix javaslatot, targeting ajánlásokat és KPI becsléseket generál, strukturált formátumban az xlsx kitöltéshez.
@@ -86,6 +86,6 @@ Phases execute in numeric order: 4 → 5 → 6
 | 1. Type System & Foundation | v1.0 | 3/3 | ✅ Complete | 2026-02-10 |
 | 2. Adaptive Questioning Engine | v1.0 | 3/3 | ✅ Complete | 2026-02-10 |
 | 3. Dynamic Report & Branding | v1.0 | 4/4 | ✅ Complete | 2026-02-10 |
-| 4. Bővített adatgyűjtés és jóváhagyás | v1.1 | 0/3 | Not started | - |
+| 4. Bővített adatgyűjtés és jóváhagyás | v1.1 | 0/3 | Planned | - |
 | 5. AI háttérkutatás | v1.1 | 0/2 | Not started | - |
 | 6. Xlsx generálás és PM delivery | v1.1 | 0/2 | Not started | - |
