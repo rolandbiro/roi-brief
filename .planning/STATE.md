@@ -5,13 +5,13 @@
 See: .planning/PROJECT.md (updated 2026-02-12)
 
 **Core value:** Az AI asszisztens kampánytípustól függően releváns, szakmai mélységű kérdéseket tesz fel — adaptív kikérdezés, ami profi brieffé áll össze, majd háttérkutatással kiegészített mediaplan-t generál a PM-nek.
-**Current focus:** v1.0 Milestone COMPLETE — All 6 phases done
+**Current focus:** v1.1 Milestone COMPLETE — All 6 phases done
 
 ## Current Position
 
 Phase: 6 of 6 (XLSX generálás és PM delivery) COMPLETE
 Plan: 2 of 2 in current phase COMPLETE
-Status: v1.0 milestone complete — all 17 plans executed
+Status: v1.1 milestone complete — all 17 plans executed
 Last activity: 2026-02-12 — Completed 06-02-PLAN.md
 
 Progress: [████████████████████] 100% (17/17 plans across all milestones)
@@ -74,5 +74,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-02-12
-Stopped at: Completed 06-02-PLAN.md — v1.0 milestone complete (all 17 plans across 6 phases)
-Resume: v1.0 milestone done. End-to-end testing recommended.
+Stopped at: Completed Phase 6 — v1.1 milestone complete (all 17 plans across 6 phases), human verified
+Resume: v1.1 milestone done. `/gsd:complete-milestone` to archive.

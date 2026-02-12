@@ -3,7 +3,7 @@
 ## Milestones
 
 - ✅ **v1.0 MVP** — Phases 1-3 (shipped 2026-02-10)
-- 🚧 **v1.1 Enhanced Brief + AI Research** — Phases 4-6 (in progress)
+- ✅ **v1.1 Enhanced Brief + AI Research** — Phases 4-6 (shipped 2026-02-12)
 
 ## Phases
 
@@ -18,13 +18,13 @@ See: `.planning/milestones/v1.0-ROADMAP.md` for full details.
 
 </details>
 
-### 🚧 v1.1 Enhanced Brief + AI Research (In Progress)
+### ✅ v1.1 Enhanced Brief + AI Research (Shipped 2026-02-12)
 
 **Milestone Goal:** Az ügyfél-oldali adatgyűjtés bővítése az Agency Brief template összes üzleti mezőjével, jóváhagyás után AI háttérkutatás a technikai adatokhoz, és kitöltött xlsx fájlok küldése a PM-nek.
 
 - [x] **Phase 4: Bővített adatgyűjtés és jóváhagyás** — Ügyfél oldali teljes flow: kibővített chat kikérdezés + jóváhagyási képernyő (completed 2026-02-12)
 - [x] **Phase 5: AI háttérkutatás** — Szerver oldali research pipeline: csatorna mix, targeting, KPI becslés (completed 2026-02-12)
-- [ ] **Phase 6: Xlsx generálás és PM delivery** — Kitöltött xlsx template-ek előállítása és emailben küldése a PM-nek
+- [x] **Phase 6: Xlsx generálás és PM delivery** — Kitöltött xlsx template-ek előállítása és emailben küldése a PM-nek (completed 2026-02-12)
 
 ## Phase Details
 
@@ -73,8 +73,8 @@ Plans:
 **Plans**: 2 plans
 
 Plans:
-- [ ] 06-01-PLAN.md — ExcelJS xlsx template kitöltés (Agency Brief + Mediaplan 4 variáns + combine)
-- [ ] 06-02-PLAN.md — PM email delivery + error handling + retry + Vercel config
+- [x] 06-01-PLAN.md — ExcelJS xlsx template kitöltés (Agency Brief + Mediaplan 4 variáns + combine)
+- [x] 06-02-PLAN.md — PM email delivery + error handling + retry + Vercel config
 
 ## Progress
 
@@ -88,4 +88,4 @@ Phases execute in numeric order: 4 → 5 → 6
 | 3. Dynamic Report & Branding | v1.0 | 4/4 | ✅ Complete | 2026-02-10 |
 | 4. Bővített adatgyűjtés és jóváhagyás | v1.1 | 3/3 | ✅ Complete | 2026-02-12 |
 | 5. AI háttérkutatás | v1.1 | 2/2 | ✅ Complete | 2026-02-12 |
-| 6. Xlsx generálás és PM delivery | v1.1 | 0/2 | Planned | - |
+| 6. Xlsx generálás és PM delivery | v1.1 | 2/2 | ✅ Complete | 2026-02-12 |
