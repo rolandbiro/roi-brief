@@ -10,11 +10,11 @@ See: .planning/PROJECT.md (updated 2026-02-12)
 ## Current Position
 
 Phase: 4 of 6 (Bővített adatgyűjtés és jóváhagyás)
-Plan: 2 of 3 in current phase
+Plan: 1 of 3 in current phase
 Status: Executing
-Last activity: 2026-02-12 — Completed 04-02-PLAN.md
+Last activity: 2026-02-12 — Completed 04-01-PLAN.md
 
-Progress: [████████████░░░░░░░░] 71% (12/17 plans across all milestones)
+Progress: [███████████░░░░░░░░░] 65% (11/17 plans across all milestones)
 
 ## Performance Metrics
 
@@ -31,7 +31,7 @@ Progress: [████████████░░░░░░░░] 71% (12
 | 01 | 3/3 | 12min | 4min |
 | 02 | 3/3 | 14min | 5min |
 | 03 | 4/4 | 43min | 11min |
-| 04 | 2/3 | — | — |
+| 04 | 1/3 | 3min | 3min |
 
 ## Accumulated Context
 
@@ -43,9 +43,8 @@ Recent decisions affecting current work:
 - [v1.1 roadmap]: DATA+APPR kombinálva Phase 4-be (kliensoldali, research előtti munka)
 - [v1.1 roadmap]: XLSX+DLVR kombinálva Phase 6-ba (szerveroldali output pipeline)
 - [v1.1 roadmap]: 3 fázis (quick depth), strictly sequential dependency chain
-- [04-02]: Bemutatkozás cég/márkáról kérdez először, nem kampány célról
-- [04-02]: 9 pontos kikérdezési sorrend az Agency Brief szekciók mentén
-- [04-02]: contact_name záró blokkba (9. pont), complete_brief blokkolva company_name+campaign_goal nélkül
+- [04-01]: field.key egységesítés — pdf/email template is key-t használ (nem path-t)
+- [04-01]: EXECUTIVE_SUMMARY eltávolítva — AGENCY_BRIEF_SECTIONS első szekciója tölti be a szerepet
 
 ### Pending Todos
 
@@ -58,5 +57,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-02-12
-Stopped at: Completed 04-02-PLAN.md (prompt rendszer átírás)
-Resume: `/gsd:execute-phase 04` (next: 04-03)
+Stopped at: Completed 04-01-PLAN.md (schema + szekció bővítés)
+Resume: `/gsd:execute-phase 04` (next: 04-02)
