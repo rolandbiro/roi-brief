@@ -5,23 +5,23 @@
 See: .planning/PROJECT.md (updated 2026-02-12)
 
 **Core value:** Az AI asszisztens kampánytípustól függően releváns, szakmai mélységű kérdéseket tesz fel — adaptív kikérdezés, ami profi brieffé áll össze, majd háttérkutatással kiegészített mediaplan-t generál a PM-nek.
-**Current focus:** Phase 5 IN PROGRESS — AI háttérkutatás
+**Current focus:** Phase 5 COMPLETE — AI háttérkutatás
 
 ## Current Position
 
-Phase: 5 of 6 (AI háttérkutatás)
-Plan: 1 of 2 in current phase COMPLETE
-Status: Executing
-Last activity: 2026-02-12 — Completed 05-01-PLAN.md
+Phase: 5 of 6 (AI háttérkutatás) COMPLETE
+Plan: 2 of 2 in current phase COMPLETE
+Status: Phase 5 complete, ready for Phase 6
+Last activity: 2026-02-12 — Completed 05-02-PLAN.md
 
-Progress: [██████████████░░░░░░] 82% (14/17 plans across all milestones)
+Progress: [████████████████░░░░] 88% (15/17 plans across all milestones)
 
 ## Performance Metrics
 
 **v1.0 Milestone:**
-- Total plans completed: 14
+- Total plans completed: 15
 - Average duration: 5min
-- Total execution time: 80min
+- Total execution time: 82min
 - Timeline: 28 nap (2026-01-13 → 2026-02-10)
 
 **By Phase:**
@@ -32,7 +32,7 @@ Progress: [██████████████░░░░░░] 82% (14
 | 02 | 3/3 | 14min | 5min |
 | 03 | 4/4 | 43min | 11min |
 | 04 | 3/3 | 9min | 3min |
-| 05 | 1/2 | 2min | 2min |
+| 05 | 2/2 | 4min | 2min |
 
 ## Accumulated Context
 
@@ -50,6 +50,10 @@ Recent decisions affecting current work:
 - [04-03]: getActiveSections key property-vel bővítve a badge field detekció miatt
 - [05-01]: Zod schemák egyszerűek (no refine/transform) a zodOutputFormat() kompatibilitás miatt
 - [05-01]: ChannelRow metrikák mind optional — kampánycéltól függően töltődnek ki
+- [05-02]: Web search + structured output két külön API hívás (citations inkompatibilis output_config-gal)
+- [05-02]: pause_turn loop a search step-ben — az API megszakíthatja, a loop folytatja
+- [05-02]: maxDuration=120 Vercel timeout kezeléshez az after() callback-ben
+- [05-02]: Pipeline results egyelőre console.log — Phase 6 oldja meg a persistálást
 
 ### Pending Todos
 
@@ -62,5 +66,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-02-12
-Stopped at: Completed 05-01-PLAN.md (research pipeline alapok: types, template-mapper, prompts)
-Resume: `/gsd:execute-phase 05` (Plan 02 — pipeline orchestrator, search, structure)
+Stopped at: Completed 05-02-PLAN.md (Phase 5 complete — teljes research pipeline: approve → pipeline → search → structure → ResearchResults)
+Resume: `/gsd:execute-phase 06` (Phase 6 — XLSX generálás és PM delivery)
