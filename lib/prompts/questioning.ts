@@ -15,18 +15,22 @@ export function buildQuestioningStrategy(briefState: BriefState): string {
     });
 
   const companyFields = ["company_name", "industry", "brand_positioning"];
-  const campaignFields = ["campaign_name", "campaign_goal", "main_message", "communication_style", "creative_source", "creative_types"];
+  const goalFields = ["campaign_goal"];
   const channelFields = ["ad_channels", "kpis"];
   const targetFields = ["gender", "age_range", "location", "psychographics", "persona"];
+  const messageFields = ["campaign_name", "main_message", "communication_style"];
+  const creativeFields = ["creative_source", "creative_types"];
   const timingFields = ["start_date", "end_date", "key_events"];
   const budgetFields = ["budget_range", "budget_allocation"];
   const competitorFields = ["competitors", "inspiring_campaigns"];
   const closingFields = ["contact_name", "existing_materials", "previous_campaigns", "notes"];
 
   const filledCompany = filled(companyFields);
-  const filledCampaign = filled(campaignFields);
+  const filledGoal = filled(goalFields);
   const filledChannels = filled(channelFields);
   const filledTarget = filled(targetFields);
+  const filledMessage = filled(messageFields);
+  const filledCreative = filled(creativeFields);
   const filledTiming = filled(timingFields);
   const filledBudget = filled(budgetFields);
   const filledCompetitor = filled(competitorFields);
@@ -42,22 +46,28 @@ export function buildQuestioningStrategy(briefState: BriefState): string {
     return true;
   }).length;
 
+  const now = new Date();
+  const currentMonth = now.toLocaleDateString("hu-HU", { year: "numeric", month: "long" });
+
   let strategy = `
 KÉRDEZÉSI STRATÉGIA:
 
+Mai dátum: ${currentMonth}
 Állapot: ${phase}
 Felismert típus(ok): ${activeTypes.length > 0 ? typeLabels : "még nem ismert"}
 Kitöltött mezők: ${totalFilled} db
 
-HALADÁS SZEKCIÓNKÉNT:
-- Cég/márka: ${filledCompany.length}/${companyFields.length} (${filledCompany.join(", ") || "üres"})
-- Kampány: ${filledCampaign.length}/${campaignFields.length} (${filledCampaign.join(", ") || "üres"})
-- Csatornák+KPI: ${filledChannels.length}/${channelFields.length} (${filledChannels.join(", ") || "üres"})
-- Célcsoport: ${filledTarget.length}/${targetFields.length} (${filledTarget.join(", ") || "üres"})
-- Időzítés: ${filledTiming.length}/${timingFields.length} (${filledTiming.join(", ") || "üres"})
-- Költségvetés: ${filledBudget.length}/${budgetFields.length} (${filledBudget.join(", ") || "üres"})
-- Versenytársak: ${filledCompetitor.length}/${competitorFields.length} (${filledCompetitor.join(", ") || "üres"})
-- Záró: ${filledClosing.length}/${closingFields.length} (${filledClosing.join(", ") || "üres"})
+HALADÁS SZEKCIÓNKÉNT (a sorrend SZÁMÍT — ne ugorj előre!):
+1. Cég/márka: ${filledCompany.length}/${companyFields.length} (${filledCompany.join(", ") || "üres"})
+2. Kampány célja: ${filledGoal.length}/${goalFields.length} (${filledGoal.join(", ") || "⚠ ÜRES — EZ A KÖVETKEZŐ!"})
+3. Csatornák+KPI: ${filledChannels.length}/${channelFields.length} (${filledChannels.join(", ") || "üres"}) → suggest_quick_replies!
+4. Célcsoport: ${filledTarget.length}/${targetFields.length} (${filledTarget.join(", ") || "üres"})
+5. Üzenet+stílus: ${filledMessage.length}/${messageFields.length} (${filledMessage.join(", ") || "üres"})
+6. Kreatívok: ${filledCreative.length}/${creativeFields.length} (${filledCreative.join(", ") || "üres"}) → suggest_quick_replies!
+7. Időzítés: ${filledTiming.length}/${timingFields.length} (${filledTiming.join(", ") || "üres"})
+8. Költségvetés: ${filledBudget.length}/${budgetFields.length} (${filledBudget.join(", ") || "üres"})
+9. Versenytársak: ${filledCompetitor.length}/${competitorFields.length} (${filledCompetitor.join(", ") || "üres"})
+10. Záró: ${filledClosing.length}/${closingFields.length} (${filledClosing.join(", ") || "üres"})
 `;
 
   // A fázis-specifikus útmutatás
@@ -84,12 +94,16 @@ TÍPUSMEGERŐSÍTÉS:
 - Ha medium/low: kérdezz rá finoman
 - Ha az érdeklődő javít: fogadd el természetesen
 
-CHECKBOX MEZŐK (használj suggest_quick_replies-t):
-- ad_channels: Facebook, Instagram, Google GDN, Google Search, TikTok, Microsoft, YouTube, Egyéb
-- kpis: Elérés, Megjelenés, Link kattintás, Website event, Social aktivitás, Egyéb
-- creative_types: Statikus, Videós
-- creative_source: Saját kreatív (ügyfél hozza), ROI Works készíti
-- gender: Nő, Férfi
+QUICK REPLY KÖTELEZŐ — Az alábbi mezőknél MINDIG hívd a suggest_quick_replies tool-t a kérdéseddel együtt:
+- ad_channels: ["Facebook", "Instagram", "Google Search", "Google GDN", "TikTok", "YouTube", "Microsoft", "Egyéb"]
+- kpis: ["Elérés", "Megjelenés", "Link kattintás", "Website event", "Social aktivitás", "Egyéb"]
+- creative_types: ["Statikus kép", "Videó"]
+- creative_source: ["Saját kreatív (ügyfél hozza)", "ROI Works készíti", "Mindkettő"]
+- gender: ["Nő", "Férfi", "Mindkettő"]
+- budget_range: ["< 500e Ft", "500e - 1M Ft", "1M - 3M Ft", "3M - 5M Ft", "5M+ Ft"]
+- start_date: a mai dátumtól (${currentMonth}) számított következő 3-4 hónap nevei quick reply-ként (NE ajánlj múltbeli hónapot!)
+- Bármilyen igen/nem kérdés: ["Igen", "Nem"]
+Ha a kérdésedre 2-8 válaszlehetőség van, MINDIG használj quick reply-t!
 
 LEZÁRÁS:
 Amikor a legtöbb szekció kitöltött (minimum: company_name + campaign_goal):
