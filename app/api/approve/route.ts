@@ -1,4 +1,7 @@
 import { after } from 'next/server';
+import { runResearchPipeline } from '@/lib/research/pipeline';
+
+export const maxDuration = 120; // 2 perc — after() callback-nek kell az idő
 
 export async function POST(request: Request) {
   let briefData;
@@ -19,8 +22,9 @@ export async function POST(request: Request) {
   // Fire-and-forget: Phase 5 research pipeline trigger
   after(async () => {
     try {
-      // Phase 5 will implement runResearchPipeline(briefData)
-      console.log('[approve] Research pipeline triggered for:', briefData.company_name);
+      const results = await runResearchPipeline(briefData);
+      // Phase 6 will store/send results
+      console.log('[approve] Research complete:', results.template_type, '- channels:', results.channels.length);
     } catch (error) {
       // Phase 6 will handle PM error notification
       console.error('[approve] Research pipeline error:', error);
