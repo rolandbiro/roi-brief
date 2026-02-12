@@ -1,269 +1,352 @@
-# Feature Research
+# Feature Research: v1.1 Enhanced Brief + AI Research
 
-**Domain:** AI-powered marketing campaign brief assistant (conversational intake)
-**Researched:** 2026-02-10
+**Domain:** Marketing ügynökségi brief asszisztens -- bővített adatgyűjtés, AI háttérkutatás, xlsx generálás
+**Researched:** 2026-02-12
 **Confidence:** MEDIUM-HIGH
+**Scope:** Csak az ÚJ v1.1 funkciók -- a v1.0 chat/questioning/PDF/email rendszer már kész.
 
-## Feature Landscape
+## Capability 1: Bővített strukturált adatgyűjtés (Agency Brief mezők)
 
-### Table Stakes (Users Expect These)
+### Kontextus
 
-Features users assume exist. Missing these = product feels incomplete or amateurish.
+A v1.0 `BriefBase` séma 10 mezőt gyűjt (company_name, industry, campaign_goal, timing, budget_range, target_audience, existing_materials, previous_campaigns, competitors, notes). A ROI Works Agency Brief xlsx template viszont jóval több mezőt tartalmaz, amiket az ügyfélnek kell kitöltenie.
 
-| Feature | Why Expected | Complexity | Notes |
-|---------|--------------|------------|-------|
-| **Campaign type detection** | Users mention their goal early -- the system must recognize whether it's media buying, PPC, brand, or social and adapt accordingly. Same-questions-for-all feels broken. | MEDIUM | AI detects type from first 2-3 responses, confirms with user. Must handle multi-type (e.g., "PPC + social"). |
-| **Type-specific question sets** | Different campaign types need fundamentally different information. Asking GRP from a social media client is nonsensical. | MEDIUM | Each type needs 8-15 specialist questions beyond the shared base. See type breakdown below. |
-| **Adaptive deepening** | If a user gives a thin answer ("not sure about budget"), a professional would probe further. Static next-question feels robotic. | MEDIUM | 2-3 levels of follow-up depth. "You mentioned 2M HUF -- does this include agency fee, or is it purely media spend?" |
-| **Smart question ordering** | Big picture first (goals, audience), details later (budget split, ad accounts). Current system asks details too early, confusing users. | LOW | Funnel pattern: context -> strategy -> tactics -> logistics. Within each type, specific ordering matters. |
-| **Progress indication** | Users need to know how much is left. Without it, they abandon thinking it's endless. | LOW | Show step count (e.g., "5/12 questions") not percentage. Steps may vary per type, so approximate. |
-| **Brief summary/review** | Users must see what they said before submitting. Errors in the brief waste agency time. | LOW | Already exists as BriefEditor. Needs to become dynamic (show only type-relevant sections). |
-| **One question at a time** | Conversational intake = one focused question per turn. Multiple questions overwhelm. | LOW | Already implemented. Maintain this strictly. |
-| **Professional tone with suggested answers** | Users often don't know marketing terminology. Offering options (like "Brand awareness", "Lead generation", "Direct sales") helps them answer faster and more accurately. | LOW | Already exists. Improve by making suggestions type-specific. |
-| **Email delivery of completed brief** | The brief must reach both the agency and the client as a formatted document. | LOW | Already exists via SendGrid. Maintain. |
-| **Mobile-friendly chat interface** | Many decision-makers first see the link on mobile. Chat must work well on small screens. | LOW | Already responsive. Verify touch targets, scroll behavior. |
+### Agency Brief xlsx template mezői (ügyfél-oldali)
 
-### Differentiators (Competitive Advantage)
+A `docs/ROI_Mediaplan/ROIworks _ TEMPLATE_ Agency campaign brief.xlsx` vizsgálatából:
 
-Features that set the product apart. Not required, but make it feel remarkably professional.
+**Alapvető információk:**
+- Cégnév
+- Kapcsolattartó neve
+- Kapcsolattartó elérhetőségei (email, telefon)
+- Cég tevékenységi köre
+- Márka pozicionálása
 
-| Feature | Value Proposition | Complexity | Notes |
-|---------|-------------------|------------|-------|
-| **Dynamic report sections** | The generated brief only shows sections relevant to the campaign type. A social media brief shows platform strategy, not GRP tables. | MEDIUM | Requires flexible BriefData schema. Each type adds/removes sections. Multi-type briefs show union of relevant sections. |
-| **Intelligent skip logic** | If a user already revealed their budget while discussing goals ("We have about 5M for Q2"), don't ask again. Extract implicit info from conversation context. | HIGH | LLM must track what's been answered across the conversation. Reduces questions from 15+ to 8-10 for well-prepared clients. |
-| **Multi-campaign-type support** | A single brief can cover multiple types (e.g., "We need performance + social media"). The assistant handles both sets of specialist questions seamlessly. | HIGH | Needs careful UX: detect overlap, avoid duplicate questions, merge report sections. |
-| **Contextual explanations** | When asking "What's your target ROAS?", explain what ROAS means and why it matters -- in plain Hungarian, not jargon soup. | LOW | Already partially implemented with the lightbulb emoji pattern. Deepen for specialist terms per type. |
-| **Quick-reply buttons** | Offer clickable buttons for common answers (e.g., platform selection: Facebook, Instagram, TikTok, YouTube, LinkedIn). Reduces typing, speeds completion. | MEDIUM | Requires frontend change: render suggestion chips the user can click. Hybrid: buttons + free text. |
-| **Brief quality scoring** | After completion, show a "brief completeness" indicator. "Your brief is 85% complete -- adding competitor info would help us prepare a better proposal." | MEDIUM | Encourages users to fill gaps without blocking submission. Separate from progress -- this is about content quality. |
-| **Conversation branching with explanation** | When the system branches to type-specific questions, briefly explain why: "Since you're focusing on media buying, I have a few specific questions about media planning..." | LOW | Simple prompt engineering. Makes the transition feel intentional, not random. |
-| **PDF download for the client** | Let the user download their own brief as a branded PDF immediately, not just via email. | LOW | Already have @react-pdf/renderer. Add a download button alongside email send. |
-| **Agency-side enrichment notes** | The AI adds internal notes for the agency: "Client mentioned tight timeline -- consider simplified media mix" or "Budget suggests mid-tier campaign." | MEDIUM | Separate section in the agency-facing brief (not visible to client). Adds real value for account managers. |
+**Kampány részletei:**
+- Kampány neve
+- Kampány típusa
+- Fő üzenet
+- Kampány kreatívok (ügyfél biztosítja / ROIworks készíti, statikus / videós)
+- Kommunikációs stílus
+- Online hirdetési csatornák (Facebook, Instagram, Google GDN, Google Search, TikTok, Microsoft, YouTube, Egyéb -- checkbox-ok)
 
-### Anti-Features (Commonly Requested, Often Problematic)
+**Kampány célja:**
+- Kampány célja szöveges leírás
+- KPI-k (Elérés, Megjelenés, Link kattintás, Website event, Social aktivitás, Egyéb -- checkbox-ok)
 
-Features that seem good but create problems in this specific context.
+**Célcsoport:**
+- Demográfiai adatok (nem, lakóhely, kor)
+- Pszichográfiai adatok (érdeklődési körök, vásárlási szokások)
+- Ideális ügyfélprofil (persona)
 
-| Feature | Why Requested | Why Problematic | Alternative |
-|---------|---------------|-----------------|-------------|
-| **User accounts / login** | "Save progress, return later" | Massive friction for a first-touch intake tool. Nobody creates an account to fill out a brief. Kills conversion rate. Anonymous sessions outperform auth for intake. | Session-based auto-save to localStorage. If they close and reopen the same link within 24h, state restores. No login needed. |
-| **PDF/document upload** | "Let me upload our existing brief" | Scope creep into document parsing, format handling, extraction errors. The v2 vision is chat-first intake, not document processing. The v1 had this and it added complexity without clear value for the intake use case. | If user mentions they have a brief, the AI says: "Great -- you can share details from your existing brief in our conversation, and I'll structure it properly." |
-| **Real-time collaboration** | "Multiple stakeholders fill it together" | Adds massive state management complexity (conflict resolution, presence, permissions). For a pre-sales intake, one person fills it out. | Single-session completion. The shareable review link (post-completion) lets others comment via email. |
-| **Conversation history / drafts** | "I want to come back to this later" | Requires persistent storage, session management, and raises privacy questions (GDPR for EU). For a 7-10 minute conversation, abandonment is better solved by reducing friction, not adding persistence. | Keep conversations short enough (target: 7-10 min) that users complete in one sitting. localStorage backup for accidental tab closes. |
-| **Full analytics dashboard** | "Track how many briefs, completion rates" | Over-engineering for current scale. Build when there's volume to analyze. | Simple server-side logging (brief count, completion flag) to a webhook or Google Sheet. Defer dashboard to v3. |
-| **White-label / multi-agency** | "Other agencies could use this too" | Premature abstraction. Build for ROI Works first. Multi-tenant adds auth, billing, branding config. | Hardcode ROI Works branding. If demand appears later, refactor. |
-| **Voice input** | "Let users speak their answers" | Browser speech APIs are unreliable in Hungarian. Transcription quality for marketing jargon is poor. Adds complexity for marginal gain. | Text input only. Hungarian text input is reliable and expected. |
-| **Auto-generated campaign proposals** | "AI should also generate the proposal" | Brief intake != proposal generation. Mixing them confuses the product's purpose and creates unrealistic client expectations about what they'll get. | Clear scope: "This creates a brief. Our team uses this brief to prepare your custom proposal." |
+**Időzítés:**
+- Indulási dátum
+- Zárási dátum
+- Fontos események
 
-## Campaign Type Question Matrix
+**Költségvetés:**
+- Allokált büdzsé (Ft)
+- Platformonkénti elosztási preferencia
 
-What each campaign type needs beyond the shared base questions.
+**Versenytársak:**
+- Fő versenytársak
+- Inspiráló kampányok vagy márkák
 
-### Shared Base (All Types)
-- Company info (name, contact, email, phone)
-- Campaign goals / objectives
-- Target audience (demographics, psychographics)
-- Timeline (start, end, key dates)
-- Budget (total, constraints)
-- Competitors
-- Previous campaign experience
+**Egyéb:**
+- Technikai követelmények (pl. pixel telepítés)
+- Belső jóváhagyási folyamatok
 
-### Media Buying Specific
-| Question Area | Why Needed | Example Questions |
-|--------------|------------|-------------------|
-| Media types | Determines planning approach | TV, radio, outdoor, print, digital display, cinema |
-| GRP / reach / frequency targets | Core media planning metrics | "Do you have target GRP? What reach percentage do you aim for?" |
-| Geographic coverage | Affects media selection | National, regional, city-specific |
-| Seasonality / flighting | Media scheduling pattern | Continuous, pulsing, seasonal burst |
-| Existing media relationships | Affects buying strategy | Current media contracts, preferred publishers |
-| Viewability / brand safety | Quality parameters | Minimum viewability %, brand safety categories |
-| OTS (Opportunity to See) | Exposure expectations | Target frequency per person |
+### Table Stakes
 
-### Performance / PPC Specific
-| Question Area | Why Needed | Example Questions |
-|--------------|------------|-------------------|
-| ROAS / CPA targets | Core performance metrics | "What return do you expect per forint spent?" |
-| Landing pages | Conversion infrastructure | Existing pages, need new ones, A/B testing |
-| Ad accounts | Technical setup | Existing Google/Meta accounts, access sharing |
-| Conversion tracking | Measurement readiness | GA4, Meta Pixel, server-side tracking |
-| Creative assets | Ad production needs | Existing creatives, need new ones, formats |
-| Product feed | Shopping campaigns | Feed availability, product count, update frequency |
-| Historical performance | Benchmark setting | Previous ROAS, CPA, best-performing campaigns |
+| Feature | Miért szükséges | Komplexitás | Megjegyzés |
+|---------|----------------|-------------|------------|
+| **Séma bővítés az Agency Brief template mezőire** | Az xlsx kitöltéshez az összes mezőnek rendelkezésre kell állnia. A jelenlegi 10 mező nem fedi le a kontakt adatokat, kreatív típusokat, checkbox-jellegű mezőket. | LOW | Zod séma bővítés, új mezők hozzáadása a BriefBase-hez. Backward compatible. |
+| **Checkbox-jellegű mezők kezelése** | Az xlsx template checkbox-okat tartalmaz (csatornák, KPI-k, kreatív típusok, nemek). Ezeket boolean/array-ként kell tárolni. | LOW | `update_brief` tool már támogatja a nested mezőket és array-t. A prompt módosítás a kulcs. |
+| **Prompt bővítés az új mezőkre** | Az AI-nak tudnia kell az összes Agency Brief mezőről és természetesen, konverzáció-szerűen kell rákérdeznie. | MEDIUM | A kérdezési stílus nem változik -- az AI ugyanúgy adaptívan kérdez, csak több mezőt fed le. A nehézség a természetes kérdezési sorrend megtartása ~25 mező esetén. |
+| **Kontakt adatok gyűjtése** | Email és telefon szükséges a PM-nek, de az ügyfél számára frictionnél érzékeny pont. | LOW | A konverzáció végén kérdezni (miután a brief kész), nem az elején. "Mielőtt lezárnánk -- milyen elérhetőségen kereshetünk?" |
 
-### Brand / Awareness Specific
-| Question Area | Why Needed | Example Questions |
-|--------------|------------|-------------------|
-| Brand positioning | Strategic foundation | Current positioning, desired positioning, USP |
-| Brand lift goals | Measurement framework | Awareness %, recall, favorability targets |
-| Tone of voice | Creative direction | Formal/casual, emotional/rational, humor/serious |
-| Key messages | Communication hierarchy | Primary message, supporting messages, proof points |
-| Competitive positioning | Differentiation | How to stand out from specific competitors |
-| Visual identity | Creative constraints | Existing brand guidelines, flexibility level |
-| Measurement approach | Success definition | Pre/post surveys, brand tracking, recall studies |
+### Differenciátorok
 
-### Social Media Specific
-| Question Area | Why Needed | Example Questions |
-|--------------|------------|-------------------|
-| Organic vs paid split | Strategy framing | Pure paid, organic + paid boost, community building |
-| Platform selection | Resource allocation | Facebook, Instagram, TikTok, YouTube, LinkedIn, X |
-| Content types | Production planning | Static, video, stories, reels, carousels, live |
-| Posting frequency | Resource planning | Daily, 3x/week, campaign-burst |
-| Community management | Scope definition | Comment moderation, DM responses, crisis protocol |
-| Influencer involvement | Partnership planning | Micro/macro, content collaboration, whitelisting |
-| Existing social presence | Starting point | Current followers, engagement rate, content history |
-| UGC strategy | Content sourcing | User-generated content usage, rights, incentives |
+| Feature | Érték | Komplexitás | Megjegyzés |
+|---------|-------|-------------|------------|
+| **Intelligens összevonás meglévő és új mezők között** | A jelenlegi type-specific mezők (GRP, ROAS, stb.) és az Agency Brief mezők közötti átfedés kezelése -- pl. online csatornák a type-specific-ben IS és az Agency Brief-ben IS szerepelnek. | MEDIUM | Nem kell dupla kérdés. Az AI promptnak le kell kezelnie, hogy ha a type-specific fázisban már kiderült a csatorna, ne kérdezze újra az Agency Brief szekciójában. |
+| **Smart defaults az AI válaszokból** | Ha az ügyfél korábban elmondta hogy "webshop" -- a "Cég tevékenységi köre" mező automatikusan kitölthető. | LOW | Prompt-szintű -- az AI az `update_brief` tool-lal rögzíti amint felismeri, nem kell explicit kérdezni. |
 
-## Feature Dependencies
+### Anti-Feature
+
+| Anti-Feature | Miért kerülni | Alternatíva |
+|--------------|---------------|-------------|
+| **Hosszú form-jellegű kikérdezés** | 25+ mező sorban megkérdezve robotikus és fárasztó. Az ügyfél abba hagyja. | Az AI csoportosítva, természetesen kérdez. Pl. "Mesélj a cégről és a kampányról!" -- ebből 4-5 mező kitölthető egyetlen válaszból. Az AI implicit infókat is rögzít. |
+| **Minden mező kötelező** | Sok mező opcionális (persona, inspiráló kampányok). Kötelezőként kezelni felesleges friction. | Az AI kérdez, de elfogadja ha az ügyfél nem tud válaszolni. Az xlsx-ben üres marad -- a PM úgyis rákérdez személyesen. |
+
+---
+
+## Capability 2: Ügyfél jóváhagyási / megerősítő flow
+
+### Kontextus
+
+A v1.0-ban a flow: chat -> complete_brief tool -> "Brief áttekintése" gomb -> BriefEditor (read-only) -> email küldés + PDF letöltés. A v1.1-ben az ügyfélnek jóvá kell hagynia az adatokat MIELŐTT az AI háttérkutatás elindul. Az email cím gyűjtése kikerül (az ügyfélnek nem kell emailt megadnia).
+
+### UX minta elemzés
+
+A bevett UX pattern marketing brief eszközökben:
+1. **Összesítő megjelenítés** -- Az összegyűjtött adatok áttekinthető formában
+2. **Explicit megerősítés** -- "Jóváhagyom" gomb (nem alapértelmezett, NN/G ajánlás)
+3. **Módosítás lehetősége** -- Ha valami nem stimmel, visszatérhet a chatbe
+4. **Egyértelmű státusz kommunikáció** -- "Az adataid alapján elkészítjük a kutatást"
+
+### Table Stakes
+
+| Feature | Miért szükséges | Komplexitás | Megjegyzés |
+|---------|----------------|-------------|------------|
+| **Jóváhagyó képernyő (BriefEditor átalakítás)** | Az ügyfélnek explicit jóvá kell hagynia az adatokat mielőtt az AI kutatást indít. Ez a megerősítés a "handoff" pont az ügyfél és a háttér-folyamat között. | MEDIUM | A meglévő BriefEditor átalakítása. Két gomb: "Jóváhagyom" (indítja a háttér-flow-t) + "Visszatérek a chatbe" (módosítás). |
+| **PDF letöltés a jóváhagyó képernyőn** | Az ügyfél kapjon saját másolatot. A v1.0-ban volt PDF letöltés -- megtartandó. | LOW | Meglévő `download-pdf` route marad. A BriefEditor-ből elérhető. |
+| **Email cím eltávolítása a flow-ból** | Az ügyfélnek NEM kell emailt megadnia (a v1.1 kontextusban). Az xlsx-ek a PM-nek mennek, nem az ügyfélnek. | LOW | BriefEditor-ből kikerül az email input és "Küldés emailben" gomb. |
+| **Háttérfolyamat indítás a jóváhagyás után** | A "Jóváhagyom" gomb elindítja az AI kutatást. Az ügyfélnek erről visszajelzést kell kapnia. | MEDIUM | A jóváhagyás után: 1) köszönő képernyő az ügyfélnek, 2) háttérben API hívás az AI kutatás indításához. |
+
+### Differenciátorok
+
+| Feature | Érték | Komplexitás | Megjegyzés |
+|---------|-------|-------------|------------|
+| **"Köszönjük" záró képernyő** | Professzionális lezárás: "Köszönjük! A csapatunk hamarosan felveszi veled a kapcsolatot." A PDF letöltés itt is elérhető. | LOW | Egyszerű statikus komponens. |
+| **Vizuális progress az AI kutatáshoz** | Az ügyfél látja hogy "Az AI most dolgozik a te briefeden..." -- de NEM kell megvárnia. | LOW | Információ jellegű, nem blokkol. Az ügyfél bezárhatja az oldalt. |
+
+### Anti-Feature
+
+| Anti-Feature | Miért kerülni | Alternatíva |
+|--------------|---------------|-------------|
+| **Szerkeszthető jóváhagyó form** | A BriefEditor szerkeszthetővé tétele hatalmas komplexitás (40+ mező validáció, nested objektumok frissítése). Az ügyfél úgyis a chatben adta meg -- ha változtatni akar, menjen vissza a chatbe. | Read-only áttekintés + "Visszatérek a chatbe" gomb. |
+| **Ügyfél bevárása az AI kutatásra** | Az AI kutatás 30-60 másodpercig tarthat. Az ügyfelet várakoztatni rossz UX. | Fire-and-forget: az ügyfél jóváhagy, PDF-et letölt, kész. Az AI háttérben dolgozik, az xlsx-ek a PM-nek mennek. |
+
+---
+
+## Capability 3: AI háttérkutatás
+
+### Kontextus
+
+Az ügyfél adataiból az AI háttérkutatást végez a ROI Works csapat számára. Ez a legértékesebb új funkció -- az ügynökség munkaórákat spórol vele. A kutatás eredményei az xlsx fájlokba kerülnek (nem az ügyfélnek látszanak).
+
+### Iparági gyakorlat
+
+A marketing ügynökségek AI kutatási workflow-ja (2026-os állapot):
+- **Brief feldolgozás**: Az AI elemzi a brief adatokat (célok, célcsoport, büdzsé, időzítés)
+- **Csatorna allokáció**: Büdzsé elosztási javaslat csatornánként (a brief által megjelölt csatornákra)
+- **Targeting javaslatok**: Platform-specifikus érdeklődési körök, audience szegmensek
+- **KPI becslés**: Iparági benchmark-ok alapján várható metrikák (CPM, CPC, CTR, konverzió)
+- **Versenytárs-elemzés**: A megadott versenytársak online jelenlétének elemzése
+- **Mediaplan metrikák**: Soronként megjelenés, kattintás, konverzió becslés a költség alapján
+
+### Table Stakes
+
+| Feature | Miért szükséges | Komplexitás | Megjegyzés |
+|---------|----------------|-------------|------------|
+| **Csatorna mix javaslat (büdzsé elosztás)** | A Mediaplan xlsx fő tartalma: melyik csatornára (Google Search, Meta Banner, TikTok Video, stb.) mennyi büdzsé menjen. Az AI a kampány célja + célcsoport + büdzsé alapján javasol. | HIGH | Ez a legkomplexebb AI feladat. A Mediaplan xlsx template struktúrájához kell illeszkednie (sorok = kampány sorok, oszlopok = cél, típus, csatorna, hirdetés típus, dátum, metrikák, költség). |
+| **KPI becslés csatornánként** | Minden mediaplan sorhoz kell: megjelenés, kattintás (becsült), konverzió/lead, CPM/CPC/CPT, teljes ár. Iparági benchmark-ok alapján. | HIGH | Az AI-nak iparág-specifikus benchmark-okat kell alkalmaznia. Pl. Google Search CPC: 50-300 Ft (iparágtól függően), Meta CPM: 800-2500 Ft, TikTok CPM: 500-1500 Ft. A becslések HUF-ban kell legyenek. |
+| **Targeting javaslatok** | Az Agency Brief xlsx-be kerülnek: érdeklődési körök platform-specifikusan (Google in-market, Meta interest targeting, TikTok interest categories). | MEDIUM | Claude API-val: a brief célcsoport leírásából és iparágából platform-specifikus targeting kategóriákat generál. Nem kell élő API -- az LLM tudása elég itt. |
+| **Kampány sor struktúra generálás** | A Mediaplan xlsx sorai nem fix sablonok -- az AI generálja a kampány struktúrát (hány kampány, milyen típus, milyen csatornán). | HIGH | A template-ben egy példa: 5 sor (Search remarketing, GDN prospecting, Meta remarketing, Meta traffic, Meta awareness). Az AI-nak a brief alapján hasonló struktúrát kell generálnia. |
+
+### Differenciátorok
+
+| Feature | Érték | Komplexitás | Megjegyzés |
+|---------|-------|-------------|------------|
+| **Versenytárs-elemzés szekció** | A brief-ben megadott versenytársak online hirdetési jelenlétének elemzése. Értékes kontextus a PM-nek. | MEDIUM | Az LLM tudásából -- nincs élő scraping. "A [versenytárs] jellemzően Meta és Google Display csatornákon hirdet, erős szezonális kampányokkal." |
+| **Iparág-specifikus benchmark alkalmazás** | A KPI becslések ne generikusak legyenek, hanem az ügyfél iparágához igazítsanak. Pl. e-commerce vs. B2B SaaS nagyon más CPL. | MEDIUM | Prompt engineering: az AI-nak az iparágat is figyelembe kell vennie a becslésekhez. |
+| **Magyar piac árszintek** | Az AI a magyar piaci árszinteket alkalmazza (nem USA CPM-eket). | LOW | Prompt-szintű: explicit kérés hogy HUF-ban, magyar piaci benchmark-okkal becsüljön. |
+
+### Anti-Feature
+
+| Anti-Feature | Miért kerülni | Alternatíva |
+|--------------|---------------|-------------|
+| **Élő platform API hívások (Google/Meta/TikTok API)** | A hirdetési platform API-khoz hozzáférés kell, OAuth, account ID-k -- az ügyfélnek nincs hozzáférése, a rendszernek sincs. Hatalmas scope creep. | Az AI a tudásából becsül. A PM manuálisan finomítja a mediaplan-t. A cél az "első draft", nem a végleges terv. |
+| **Automatikus bid/budget optimalizáció** | A valós idejű optimalizáció egy teljesen más product (DSP, campaign manager). | A brief asszisztens a TERVEZÉSI fázist automatizálja, nem a FUTTATÁSI fázist. |
+| **Pontos ROI garancia/előrejelzés** | Az AI becslései tájékoztató jellegűek. Ha a rendszer "garantált ROAS" számokat ad, jogi és bizalmi kockázat. | Explicit disclaimer: "Becsült értékek iparági benchmark-ok alapján. A tényleges eredmények eltérhetnek." |
+
+---
+
+## Capability 4: Xlsx generálás (Agency Brief + Mediaplan)
+
+### Kontextus
+
+Két xlsx fájl generálása a ROI Works template-ek alapján:
+1. **Agency Brief xlsx** (`ROIworks _ TEMPLATE_ Agency campaign brief.xlsx`) -- az ügyfél adataival kitöltve
+2. **Mediaplan all channels xlsx** (`ROIworks _ TEMPLATE_ Mediaplan all channels.xlsx`) -- az AI kutatás eredményeivel kitöltve
+
+### Template struktúra analízis
+
+**Agency Brief xlsx:**
+- Egyetlen sheet (Sheet1)
+- Fix layout: label-ek az A oszlopban, értékek a B-E oszlopokban
+- Checkbox-ok FALSE/TRUE értékekkel (B-E oszlopok, soronként 2-4 checkbox)
+- Összevont cellák (merged cells) a fejlécekhez
+- Formázás: ROI Works arculat (színek, betűtípus)
+
+**Mediaplan all channels xlsx:**
+- Egyetlen sheet (Media_plan)
+- Fejléc blokk: ROIworks cégadatok + partner (ügyfél) adatok + kampány név + időszak + keretösszeg
+- PPC MARKETING szekció: táblázat (kampány cél, típus, csatorna, hirdetés típus, dátum, metrikák, költségek)
+- eDM szekció: hasonló struktúra más metrikákkal
+- Egyéb média szekció: egyszerűbb sorok
+- Gyártás szekció: megnevezés + részletek + ár
+- Ügynökségi díj: százalékos számítás
+- TELJES KAMPÁNY BUDGET sor: összesítés
+
+### Table Stakes
+
+| Feature | Miért szükséges | Komplexitás | Megjegyzés |
+|---------|----------------|-------------|------------|
+| **Agency Brief xlsx kitöltés template-ből** | A meglévő xlsx template betöltése, az ügyfél adataival kitöltése, formázás megőrzése. | MEDIUM | Lib választás: `xlsx-populate` az ideális (template betöltés + formázás megőrzés). A cellák fix pozíciókon vannak a template-ben, cell reference-ekkel címezhető. |
+| **Mediaplan xlsx kitöltés template-ből** | A meglévő xlsx template betöltése, az AI kutatás adataival kitöltése. A fejléc (partner adatok, kampány név, időszak, keretösszeg) + a PPC táblázat sorai. | HIGH | A PPC szekció DINAMIKUS -- az AI generál N sort, a template-ben csak example sorok vannak. A sorok beszúrása formázással együtt trükkös. |
+| **Checkbox kezelés az Agency Brief-ben** | A template TRUE/FALSE értékekkel jelzi a checkbox-okat (csatornák, KPI-k, kreatív típusok). Az AI-tól kapott adatokból ezeket kell kitölteni. | LOW | Egyszerű boolean mapping: ha az ügyfél választotta a Facebook ads-t, az adott cella TRUE-ra áll. |
+| **Összeg számítások a Mediaplan-ban** | A template-ben összegző sorok vannak ("PPC MARKETING ÖSSZESEN", "TELJES KAMPÁNY BUDGET"). Ezeknek az AI-generált sorok összegeit kell tartalmazniuk. | MEDIUM | Formulák (SUM) vagy explicit számított értékek. A formula megőrzés xlsx-populate-tal lehetséges. |
+
+### Differenciátorok
+
+| Feature | Érték | Komplexitás | Megjegyzés |
+|---------|-------|-------------|------------|
+| **Dinamikus PPC sor generálás** | Az AI nem fix 5 sort generál, hanem a kampány komplexitásához igazítja a sorok számát (3-15 sor). | HIGH | A template-ben a PPC szekció sorait törölni/beszúrni kell. Az xlsx-populate row manipulation API-jával lehetséges, de a formázás másolása soronként szükséges. |
+| **Ügynökségi díj automatikus számítás** | Az xlsx-ben "15%, Mass médiára vonatkozóan" -- automatikusan számított a PPC összesítőből. | LOW | Egyszerű számítás: PPC_total * 0.15 (vagy konfigurálható %). |
+
+### Anti-Feature
+
+| Anti-Feature | Miért kerülni | Alternatíva |
+|--------------|---------------|-------------|
+| **Xlsx generálás from scratch (template nélkül)** | ExcelJS-sel nulláról felépíteni az xlsx-t rengeteg formázási munka (merged cells, színek, betűméret, oszlopszélesség). A ROI Works design-ja pixel-perfect kell legyen. | Template-alapú megközelítés: a template-t betöltjük, csak az értékeket írjuk bele. A formázás a template-ből jön. |
+| **Xlsx szerkesztő az UI-ban** | Az ügyfélnek nem kell xlsx-t szerkesztenie. A PM Excelben nyitja meg és finomítja. | A generált xlsx a PM-nek megy emailben. |
+| **PDF konverzió az xlsx-ből** | Az xlsx-ek nem kell PDF-ek is legyenek. A PM xlsx-ben dolgozik tovább. | Két output: PDF az ügyfélnek (meglévő @react-pdf/renderer), xlsx a PM-nek. |
+
+---
+
+## Capability 5: PM email xlsx csatolmányokkal
+
+### Kontextus
+
+Az AI kutatás és xlsx generálás után a kitöltött fájlokat el kell küldeni a ROI Works projekt menedzsernek. A v1.0 SendGrid integráció már működik (PDF csatolmánnyal küld emailt).
+
+### Table Stakes
+
+| Feature | Miért szükséges | Komplexitás | Megjegyzés |
+|---------|----------------|-------------|------------|
+| **Xlsx fájlok email csatolmányként** | A SendGrid API támogatja a többszörös csatolmányt. A meglévő send-brief route-ot kell bővíteni. | LOW | A v1.0 `send-brief` route már base64-ben csatol PDF-et. Ugyanez xlsx-ekkel: `content: xlsxBase64, type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"`. |
+| **Két xlsx fájl csatolása** | Agency Brief xlsx + Mediaplan xlsx. | LOW | Mindkét buffer-t base64-re konvertálni, hozzáadni az attachments tömbhöz. |
+| **Email tartalom bővítés** | Az email bodynak tartalmaznia kell az ügyfél nevét, kampány nevét, rövid összefoglalót. | LOW | A meglévő `generateEmailHtml` bővítése. |
+| **Háttérben futtatás (fire-and-forget)** | Az AI kutatás + xlsx generálás + email küldés az ügyfél jóváhagyása után háttérben történik. Az ügyfél NEM vár rá. | MEDIUM | Next.js API route-ból indítva. A kihívás: a Vercel serverless function timeout (10s free, 60s pro). Az AI kutatás + xlsx generálás + email küldés 10s alatt kell legyen, vagy több lépcsős megoldás kell. |
+
+### Differenciátorok
+
+| Feature | Érték | Komplexitás | Megjegyzés |
+|---------|-------|-------------|------------|
+| **Email subject és body az ügyfél adataival** | "Kampány Brief: [Cégnév] - [Kampány neve]" + strukturált összefoglaló az email body-ban. | LOW | Meglévő pattern bővítése. |
+
+### Anti-Feature
+
+| Anti-Feature | Miért kerülni | Alternatíva |
+|--------------|---------------|-------------|
+| **Email küldés az ügyfélnek is** | A v1.1-ben az xlsx-ek belső dokumentumok, nem az ügyfél kapja. Az ügyfél a PDF-et tölti le a jóváhagyó képernyőn. | Az ügyfél PDF-et kap (letöltés), a PM xlsx-eket kap (email). |
+| **Webhook / Slack / CRM integráció** | Premature -- a SendGrid email a legegyszerűbb csatorna. Ha a PM Slack-et preferálja, az v2-ben jöhet. | Email-first. |
+
+---
+
+## Capability összefüggések (Dependencies)
 
 ```
-[Campaign Type Detection]
+[1. Bővített adatgyűjtés]
     |
-    +--requires--> [Type-Specific Question Sets]
-    |                   |
-    |                   +--requires--> [Flexible BriefData Schema]
-    |                                       |
-    |                                       +--enables--> [Dynamic Report Sections]
-    |                                       |
-    |                                       +--enables--> [Dynamic BriefEditor]
+    +--kiterjeszti--> BriefBase séma (Zod)
+    +--módosítja--> AI promptok (questioning)
+    +--módosítja--> update_brief tool (új mezők)
     |
-    +--enhances--> [Smart Question Ordering]
+    v
+[2. Jóváhagyási flow]
     |
-    +--enhances--> [Progress Indication]
-
-[Adaptive Deepening]
+    +--átalakítja--> BriefEditor (read-only + jóváhagyás + visszatérés)
+    +--módosítja--> brief/page.tsx (állapotgép: chat -> review -> approved)
+    +--eltávolítja--> email cím bekérés, email küldés gomb
+    +--hozzáad--> "Köszönjük" képernyő
     |
-    +--enhances--> [Intelligent Skip Logic]
+    v
+[3. AI háttérkutatás]
     |
-    +--requires--> [Conversation State Tracking] (prompt-level)
-
-[Multi-Campaign-Type Support]
+    +--függ--> jóváhagyott briefData (capability 2 outputja)
+    +--hozzáad--> új API route: /api/research (Claude API hívás)
+    +--generálja--> ResearchData struktúra (channel mix, KPI-k, targeting, sorok)
     |
-    +--requires--> [Campaign Type Detection]
-    +--requires--> [Type-Specific Question Sets]
-    +--requires--> [Flexible BriefData Schema]
-
-[Quick-Reply Buttons]
+    v
+[4. Xlsx generálás]
     |
-    +--requires--> [Chat UI Changes] (frontend)
-    +--enhances--> [Progress / Completion Rate]
-
-[Brief Quality Scoring]
+    +--függ--> ResearchData (capability 3 outputja)
+    +--függ--> briefData (capability 1 outputja)
+    +--hozzáad--> xlsx-populate dependency
+    +--betölti--> template xlsx fájlok (/docs/ROI_Mediaplan/)
+    +--generálja--> kitöltött Agency Brief xlsx + Mediaplan xlsx (Buffer-ek)
     |
-    +--requires--> [Flexible BriefData Schema]
-    +--enhances--> [Brief Summary/Review]
-
-[PDF Download]
+    v
+[5. PM email]
     |
-    +--requires--> [Dynamic Report Sections]
-    +--uses--> [@react-pdf/renderer] (already exists)
+    +--függ--> xlsx Buffer-ek (capability 4 outputja)
+    +--módosítja--> send-brief API route (xlsx csatolmányok)
+    +--meglévő--> SendGrid integráció
 ```
 
-### Dependency Notes
+### Kritikus szekvencia
 
-- **Flexible BriefData Schema is the foundation**: Almost everything depends on moving from a fixed 13-field structure to a type-aware, extensible schema. This must come first.
-- **Campaign Type Detection enables specialization**: Without knowing the type, you can't specialize questions, report sections, or quality scoring.
-- **Adaptive Deepening is prompt-only**: No code dependency, just sophisticated prompt engineering. Can be developed in parallel with schema work.
-- **Multi-Type is the hardest feature**: It requires all single-type features to work first, plus merge logic for overlapping questions and report sections.
+A capability-k **szigorúan sorrendben** függenek egymástól:
+1. Séma bővítés KELL HOGY megelőzze a promptot (az AI-nak tudnia kell milyen mezőket gyűjtsön)
+2. Jóváhagyási flow KELL HOGY megelőzze az AI kutatást (a kutatás inputja a jóváhagyott brief)
+3. AI kutatás KELL HOGY megelőzze az xlsx generálást (az xlsx tartalma a kutatás eredménye)
+4. Xlsx generálás KELL HOGY megelőzze az emailt (az email csatolmánya az xlsx)
 
-## MVP Definition
+A párhuzamosítási lehetőség minimális. Kivétel: a séma bővítés és a jóváhagyási flow UI munkák részben párhuzamosíthatók.
 
-### Launch With (v1 -- this milestone)
+---
 
-Minimum viable improvement over current system.
+## MVP ajánlás
 
-- [ ] **Flexible BriefData schema** -- Foundation for everything else. Type-aware fields replacing the fixed 13-field structure.
-- [ ] **Campaign type detection** -- AI identifies type(s) from first 2-3 exchanges, confirms with user.
-- [ ] **Type-specific question sets** -- Each of the 4 types gets its specialist questions. Single-type flow first.
-- [ ] **Smart question ordering** -- Funnel pattern: context -> strategy -> tactics -> logistics.
-- [ ] **Adaptive deepening** -- AI probes thin answers, skips where info already emerged.
-- [ ] **Dynamic report sections** -- Brief output only shows relevant sections for the detected type.
-- [ ] **Dynamic BriefEditor** -- Editor adapts to show type-relevant fields.
-- [ ] **Progress indication** -- Show approximate step position in the conversation.
+### Prioritás 1 (v1.1 must-have)
 
-### Add After Validation (v1.x)
+1. **Séma bővítés** -- Agency Brief xlsx mezőire (Zod séma + prompt)
+2. **Jóváhagyási flow** -- BriefEditor átalakítás, email eltávolítás, "Jóváhagyom" gomb
+3. **AI háttérkutatás** -- Channel mix + KPI becslés + targeting (egyetlen Claude API hívás)
+4. **Agency Brief xlsx kitöltés** -- Template betöltés, ügyfél adatok beírása
+5. **Mediaplan xlsx kitöltés** -- Template betöltés, AI kutatás adatok beírása (fejléc + PPC sorok)
+6. **PM email** -- Két xlsx csatolmány küldése
 
-Features to add once core type-specific flow is working and validated with real users.
+### Halasztandó (v1.2+)
 
-- [ ] **Multi-campaign-type support** -- Trigger: users frequently say "we need both performance and social". Build when single-type is solid.
-- [ ] **Quick-reply buttons** -- Trigger: completion rate data shows users struggle with text-heavy answers. Chip-style suggestions for common answers.
-- [ ] **Brief quality scoring** -- Trigger: agency reports that briefs are frequently incomplete. Visual indicator encouraging better responses.
-- [ ] **PDF download for client** -- Trigger: users ask for it (currently email-only). Low effort with existing @react-pdf/renderer.
-- [ ] **Agency-side enrichment notes** -- Trigger: account managers confirm they'd use AI-generated intake notes.
-- [ ] **localStorage session backup** -- Trigger: abandonment rate data shows users accidentally losing progress.
+- **eDM szekció a Mediaplan-ban** -- nem minden kampányhoz releváns, a PPC szekció a fő prioritás
+- **Egyéb média / Gyártás szekciók** -- manuálisan tölti a PM
+- **Versenytárs-elemzés részletes szekció** -- az AI rövid megjegyzésként belefoglalhatja a targeting javaslatokba
 
-### Future Consideration (v2+)
+---
 
-Features to defer until product-market fit is established with ROI Works.
+## Komplexitás összesítés
 
-- [ ] **Conversation analytics** -- Defer until volume justifies it. Start with simple logging.
-- [ ] **A/B testing question flows** -- Defer until there's enough data to optimize.
-- [ ] **API / webhook integration** -- Defer until CRM integration need is validated.
-- [ ] **Template management UI** -- Defer until non-developer team members need to update question logic.
+| Capability | Összesített komplexitás | Fő kockázat |
+|------------|------------------------|-------------|
+| 1. Bővített adatgyűjtés | LOW-MEDIUM | Prompt méret/minőség ~25 mezővel |
+| 2. Jóváhagyási flow | MEDIUM | Állapotgép átstrukturálás (chat->review->approved->done) |
+| 3. AI háttérkutatás | HIGH | AI output struktúra validáció, HUF benchmark pontosság |
+| 4. Xlsx generálás | HIGH | Dinamikus sor beszúrás formázással, template manipulation |
+| 5. PM email | LOW | Meglévő pattern, minimális bővítés |
 
-## Feature Prioritization Matrix
+**Legkockázatosabb**: Capability 3 (AI kutatás) es Capability 4 (xlsx generálás). Az AI kutatás kimenetének determinisztikusnak kell lennie ahhoz, hogy az xlsx template-et megbízhatóan kitöltse. Ha az AI nem strukturált JSON-t ad vissza, az xlsx generálás elbukik.
 
-| Feature | User Value | Implementation Cost | Priority |
-|---------|------------|---------------------|----------|
-| Flexible BriefData schema | HIGH | MEDIUM | **P1** |
-| Campaign type detection | HIGH | LOW | **P1** |
-| Type-specific question sets | HIGH | MEDIUM | **P1** |
-| Smart question ordering | HIGH | LOW | **P1** |
-| Adaptive deepening | HIGH | MEDIUM | **P1** |
-| Dynamic report sections | HIGH | MEDIUM | **P1** |
-| Dynamic BriefEditor | HIGH | MEDIUM | **P1** |
-| Progress indication | MEDIUM | LOW | **P1** |
-| Multi-type support | MEDIUM | HIGH | **P2** |
-| Quick-reply buttons | MEDIUM | MEDIUM | **P2** |
-| Brief quality scoring | MEDIUM | MEDIUM | **P2** |
-| PDF download | MEDIUM | LOW | **P2** |
-| Agency enrichment notes | MEDIUM | MEDIUM | **P2** |
-| localStorage backup | LOW | LOW | **P2** |
-| Conversation analytics | LOW | MEDIUM | **P3** |
-| A/B testing flows | LOW | HIGH | **P3** |
-
-**Priority key:**
-- P1: Must have for this milestone
-- P2: Should have, add when possible
-- P3: Nice to have, future consideration
-
-## Competitor Feature Analysis
-
-| Feature | HolaBrief | Briefly | Foreplay Briefs | The Brief AI | **ROI Brief v2** |
-|---------|-----------|---------|-----------------|-------------|------------------|
-| Brief creation method | Interactive templates with exercises | Guided form with AI triage | Modular drag-and-drop | AI agents + templates | **Conversational AI chat** |
-| Adaptive questioning | No (static templates) | Partial (AI pre-checks) | No | No | **Yes (core differentiator)** |
-| Campaign type specialization | Generic templates | Generic workflows | Performance-focused only | Ad creation focused | **4 specific types with specialist questions** |
-| AI involvement | None (template-only) | AI for validation + enrichment | AI for ad analysis | AI for ad creation | **AI drives the entire intake** |
-| Client experience | Fill form (no account needed) | Internal team tool | Internal team tool | Internal team tool | **Guided conversation (no account needed)** |
-| Multi-language | English-focused | English | English | Multi-language ads | **Hungarian (specific market advantage)** |
-| Target user | Agency + client collaboration | Internal creative ops teams | Performance marketers | Ad teams | **Prospective clients (pre-sale)** |
-| Pricing | From $19/mo | Enterprise pricing | From $59/mo | From $49/mo | **Free for clients (agency tool)** |
-
-### Our Unique Position
-
-Most competitors build tools for internal agency teams. ROI Brief v2 is unique because:
-1. **Client-facing**: The end user is the prospective client, not the agency team
-2. **Conversational**: Chat-based intake vs form-based templates
-3. **Pre-sale**: Happens before any contract, reducing friction to near-zero
-4. **Adaptive**: AI adapts in real-time vs static templates
-5. **Hungarian market**: No competitor serves Hungarian-language marketing brief intake
-
-This positioning means our "competition" is really just email + phone calls + generic Google Forms -- not the sophisticated brief tools above.
+---
 
 ## Sources
 
-- [Uplifted.ai - Top 10 Creative Brief Tools 2026](https://www.uplifted.ai/blog/post/top-10-creative-brief-tools-for-2026-from-ai-collaboration-to-performance-driven-workflows) -- MEDIUM confidence (single commercial source)
-- [HolaBrief](https://www.holabrief.com/) -- MEDIUM confidence (official site, feature claims verified)
-- [Briefly](https://trybriefly.com/) -- MEDIUM confidence (official site)
-- [Foreplay Briefs](https://www.foreplay.co/briefs) -- MEDIUM confidence (official site)
-- [The Brief AI](https://www.thebrief.ai) -- MEDIUM confidence (official site)
-- [AgencyAnalytics - 37 Client Onboarding Questions](https://agencyanalytics.com/blog/client-onboarding-questionnaire) -- HIGH confidence (practitioner-written, well-sourced)
-- [Sendible - 42 Social Media Questions](https://www.sendible.com/insights/social-media-questionnaire) -- HIGH confidence (practitioner-written)
-- [Leadsie - 27 Agency Onboarding Questions](https://www.leadsie.com/blog/client-onboarding-questionnaire) -- HIGH confidence (multiple agency input)
-- [Ideta - Conversational Form Statistics](https://www.ideta.io/blog-posts-english/conversational-form-beats-web-form) -- MEDIUM confidence (vendor data)
-- [Smashing Magazine - Conversational AI UX Guide](https://www.smashingmagazine.com/2024/07/how-design-effective-conversational-ai-experiences-guide/) -- HIGH confidence (respected publication)
-- [PatternFly - Conversation Design](https://www.patternfly.org/patternfly-ai/conversation-design/) -- HIGH confidence (design system docs)
-- [MindTheProduct - Chatbot UX Best Practices](https://www.mindtheproduct.com/deep-dive-ux-best-practices-for-ai-chatbots/) -- MEDIUM confidence
+- ROI Works Agency Brief xlsx template analízis (`docs/ROI_Mediaplan/ROIworks _ TEMPLATE_ Agency campaign brief.xlsx`) -- HIGH confidence (elsődleges forrás)
+- ROI Works Mediaplan xlsx template analízis (`docs/ROI_Mediaplan/ROIworks _ TEMPLATE_ Mediaplan all channels.xlsx`) -- HIGH confidence (elsődleges forrás)
+- [xlsx-populate -- npm](https://www.npmjs.com/package/xlsx-populate) -- HIGH confidence (hivatalos npm csomag)
+- [xlsx-populate GitHub](https://github.com/dtjohnson/xlsx-populate) -- HIGH confidence (hivatalos repo, template filling docs)
+- [xlsx-template -- npm](https://www.npmjs.com/package/xlsx-template) -- MEDIUM confidence (alternatíva, kisebb community)
+- [Capably.ai -- Media Planning Automation](https://www.capably.ai/resources/media-planning-automation) -- MEDIUM confidence (iparági trend)
+- [TAU Marketing Solutions -- AI Agents in Media Planning](https://taums.ai/ai-agents-in-media-planning-and-buying/) -- MEDIUM confidence (iparági trend)
+- [AdAmigo -- KPIs for Cross-Platform Ad Benchmarking](https://www.adamigo.ai/blog/top-7-kpis-for-cross-platform-ad-benchmarking) -- MEDIUM confidence (benchmark adatok)
+- [AI Digital -- 15 Essential Digital Marketing KPIs 2026](https://www.aidigital.com/blog/digital-marketing-kpi) -- MEDIUM confidence
+- [Planable -- Marketing Approval Process 2026](https://planable.io/blog/marketing-approval-process/) -- MEDIUM confidence (UX patterns)
+- [NN/G -- Confirmation Dialogs](https://www.nngroup.com/articles/confirmation-dialog/) -- HIGH confidence (UX best practices)
+- [Material Design -- Confirmation & Acknowledgement](https://m2.material.io/design/communication/confirmation-acknowledgement.html) -- HIGH confidence (design pattern)
 
 ---
-*Feature research for: AI-powered marketing campaign brief assistant*
-*Researched: 2026-02-10*
+*Feature research: v1.1 Enhanced Brief + AI Research*
+*Researched: 2026-02-12*

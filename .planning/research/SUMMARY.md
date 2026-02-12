@@ -1,181 +1,339 @@
 # Project Research Summary
 
-**Project:** ROI Brief Assistant v2
-**Domain:** Adaptive AI-powered marketing campaign brief intake (conversational)
-**Researched:** 2026-02-10
+**Project:** ROI Brief v1.1 - Bővített adatgyűjtés, AI kutatás, XLSX generálás
+**Domain:** Marketing ügynökségi brief asszisztens - conversational AI workflow kiterjesztése strukturált dokumentumgenerálással
+**Researched:** 2026-02-12
 **Confidence:** HIGH
 
 ## Executive Summary
 
-ROI Brief v2 is a refactoring of an existing AI chat-based brief intake tool from a fixed 13-question flow to a campaign-type-adaptive questioning system. The product's unique position is clear: it is client-facing (not an internal agency tool), conversational (not form-based), and serves the Hungarian marketing market with zero competition. Research confirms the recommended approach is prompt-driven adaptivity with Claude's native structured outputs, not a framework-heavy orchestration layer. The existing stack (Next.js 16, React 19, direct Anthropic SDK, @react-pdf/renderer) is solid. Only two additions are needed: Zod v4 for schema validation and an Anthropic SDK upgrade to ^0.74.0 for GA structured output support.
+A ROI Brief v1.1 egy marketing brief asszisztens kiterjesztése, amely háromféle új képességet integrál a meglévő Next.js chat rendszerbe: bővített adatgyűjtés (25+ mező az Agency Brief template-hez), AI-alapú háttérkutatás (csatorna-allokáció, KPI becslés, targeting javaslatok) és XLSX generálás meglévő sablonokból. A legnagyobb technikai kihívás az architektúra átmenet: a v1.0 teljesen stateless volt, a v1.1 viszont megköveteli a server-side persistence-t (Vercel KV) a háttérfeldolgozáshoz. Ez alapvető változást jelent a data flow-ban.
 
-The architecture should follow a dual-call pattern: streaming conversational chat for the user-facing interaction, plus a separate structured-output extraction call for the final brief data. Campaign type detection happens via Claude tool use (classify_campaign), and brief data accumulates incrementally through update_brief tool calls throughout the conversation -- replacing the brittle BRIEF_JSON_START/END regex extraction. The type system uses Zod schemas as a single source of truth, generating both TypeScript types and Anthropic JSON schemas from one definition. Campaign-type-specific knowledge lives in modular TypeScript constant files, composed into the system prompt dynamically.
+Az ajánlott megközelítés: minimális új függőségek (csak ExcelJS), a meglévő Anthropic SDK `web_search_20250305` tool használata (nincs külső keresőmotor API), és a Next.js 16 `after()` függvény alkalmazása háttérfeldolgozásra. A kritikus időzítési döntés: az ügyfél jóváhagyja a brief-et, letölti a PDF-et, és azonnal kap egy "Köszönjük" oldalt - ekkor a session VÉGET ÉR számára. Ezután a szerver háttérben futtatja az AI kutatást, generálja az XLSX-eket és emailezi őket a PM-nek. Ez az aszinkron handoff pattern szükségessé teszi a Vercel KV bevezetését a research state tárolására.
 
-The three biggest risks are: (1) the current regex-based JSON extraction will fail catastrophically with dynamic schemas -- structured outputs must be the first thing built; (2) survey fatigue if adaptive questioning adds questions instead of replacing them -- a hard cap of 12-15 questions is essential; (3) context window drift in longer conversations causing Claude to forget early answers -- incremental data capture via tool calls is the mitigation, not relying on re-reading the full conversation.
+A legkritikusabb kockázatok: AI hallucináció marketing adatokban (CPM ráták, KPI becslések), Vercel function timeout-ok az AI kutatásnál, és a 4.5 MB response body limit az XLSX/PDF output-nál. Mitigáció: Anthropic Citations használata, Fluid Compute engedélyezése (300s default timeout), Vercel Blob köztes tárolás nagy fájlokhoz, és explicit disclaimer az AI-generált adatokra.
 
 ## Key Findings
 
 ### Recommended Stack
 
-The existing stack requires minimal changes. No new frameworks, no database, no state machine library. The key insight is that the Anthropic SDK already provides everything needed for adaptive questioning when combined with Zod for schema validation.
+A kutatás egyetlen új függőséget azonosított kritikusnak: **ExcelJS** (~1.08 MB, buffer-alapú XLSX generálás). Az összes többi új képesség a meglévő stack kiterjesztése - az Anthropic SDK már tartalmazza a `web_search_20250305` tool-t, a SendGrid már kezeli a csatolmányokat (PDF-hez használt pattern azonnal adaptálható XLSX-re). Ez KISS elv: ne adj hozzá amit nem kell.
 
 **Core technologies:**
-- **Zod v4** (^4.3.6): Schema validation, discriminated unions for campaign-type-specific data, and the bridge to Anthropic structured outputs via `zodOutputFormat()`. Single source of truth for types.
-- **@anthropic-ai/sdk** (upgrade to ^0.74.0): GA structured outputs with `output_config.format`, tool use for incremental data extraction, streaming compatibility.
-- **Remove `ai` package**: Vercel AI SDK is listed in package.json but has zero imports. Removing it cuts bundle size and eliminates confusion.
+- **ExcelJS (^4.4.0)**: XLSX template betöltés és cellakitöltés — buffer-alapú I/O serverless környezethez, megőrzi a formázást és stílusokat. A SheetJS Community Edition-nel ellentétben nem veszít el stílusokat, és az xlsx-populate-tal szemben aktívan karbantartott.
+- **Anthropic Web Search Tool (web_search_20250305)**: AI kutatási pipeline — beépített server-side tool, nincs külön dependency. $10/1000 keresés + token költség. Localizálható (HU), citation-ökkel validálható.
+- **@sendgrid/mail (meglévő)**: XLSX csatolmányok — a PDF pattern 1:1 átültethető, csak MIME type változik (`application/vnd.openxmlformats-officedocument.spreadsheetml.sheet`).
+- **Vercel KV (új infrastruktúra)**: Session state tárolás — a háttérfeldolgozáshoz szükséges persistence. TTL-lal (24h) automatikus cleanup.
+- **Next.js after() (meglévő, v16.1.1)**: Háttérfeldolgozás — stable API a válasz elküldése után futó task-okra, `waitUntil()` wrapper serverless-ben.
 
-**What NOT to add:** LangChain (overkill for single-model system), XState (adaptive questioning is prompt-driven, not state-machine-driven), vector database (4 campaign types fit in a prompt), user auth/database (brief data is generated and emailed, no persistence needed).
+**Vercel infrastruktúra követelmények:**
+- Fluid Compute (default 300s, max 800s) — kritikus a timeout elkerülésére
+- Vercel Blob — 4.5 MB response limit megkerülése nagy XLSX-eknél
+- Vercel KV (Redis) — research state persistence session-ök között
 
 ### Expected Features
 
-**Must have (table stakes) -- v1:**
-- Campaign type detection from conversation context (AI detects, user confirms)
-- Type-specific question sets (8-15 specialist questions per type beyond shared base)
-- Adaptive deepening (probe thin answers, skip already-answered questions)
-- Smart question ordering (funnel: context -> strategy -> tactics -> logistics)
-- Flexible BriefData schema (type-aware fields replacing fixed 13-field structure)
-- Dynamic report sections (PDF/email show only type-relevant sections)
-- Dynamic BriefEditor (editor adapts to show type-relevant fields)
-- Progress indication (step count, not percentage)
+A feature kutatás 5 capability-t azonosított, szigorúan függőségi sorrendben.
 
-**Should have (differentiators) -- v1.x:**
-- Multi-campaign-type support (one brief covering performance + social)
-- Quick-reply buttons (clickable suggestion chips for common answers)
-- Brief quality scoring ("Your brief is 85% complete")
-- PDF download for client (alongside email)
-- Agency-side enrichment notes (AI-generated internal notes for account managers)
+**Must have (table stakes):**
+- **Bővített adatgyűjtés** - 25+ mező az Agency Brief template-hez (kontakt adatok, kampány kreatívok, checkbox mezők: csatornák/KPI-k/nemek). A prompt természetes konverzációban gyűjt, NEM form-szerűen.
+- **Jóváhagyási flow** - BriefEditor átalakítás: read-only áttekintés + explicit "Jóváhagyom" gomb. Email cím NEM szükséges (kikerül). PDF letöltés mindig elérhető, de az email csak a PM-nek megy.
+- **AI háttérkutatás** - Claude + web_search tool: csatorna-allokáció (büdzsé elosztás), KPI becslés (CPM/CPC/CTR iparági benchmark-okkal), targeting javaslatok (platform-specifikus érdeklődési körök), versenytárs-elemzés. **Structured output**: ResearchResults interface, nem szabadszöveges válasz.
+- **Agency Brief XLSX kitöltés** - Template betöltés ExcelJS-sel, ügyfél adatokkal kitöltés (fix cell pozíciók), checkbox-ok TRUE/FALSE értékek, formázás megőrzés.
+- **Mediaplan XLSX kitöltés** - Template betöltés, fejléc kitöltés (partner adatok, kampány név, időszak, keretösszeg), dinamikus PPC sorok generálása az AI kutatás alapján (kampány cél, típus, csatorna, hirdetés típus, metrikák, költségek).
+- **PM email XLSX csatolmányokkal** - SendGrid meglévő pattern kiterjesztése két XLSX attachment-tel (Agency Brief + Mediaplan), research summary HTML email body-ban.
+
+**Should have (competitive):**
+- **Intelligens összevonás**: Ha a type-specific fázis már kikérdezte a csatornát, ne kérdezze újra az Agency Brief szekcióban. Prompt-szintű deduplikáció.
+- **Smart defaults**: Ha az ügyfél elmondta hogy "webshop" - a "Cég tevékenységi köre" mező automatikusan kitölthető az AI által implicit.
+- **Iparág-specifikus benchmarkok**: Ne generikus CPM-et becsüljön, hanem az ügyfél iparágához igazított értékeket (e-commerce vs B2B SaaS nagyon más).
+- **Magyar piaci árszintek**: Az AI magyar piaci benchmark-okat alkalmazzon (HUF), ne USA CPM-eket.
 
 **Defer (v2+):**
-- Conversation analytics, A/B testing flows, API/webhook integrations, template management UI
-- User accounts, real-time collaboration, voice input, auto-generated proposals
+- **eDM szekció a Mediaplan-ban**: Nem minden kampányhoz releváns, a PPC szekció a fő prioritás.
+- **Egyéb média / Gyártás szekciók**: A PM ezeket manuálisan tölti ki.
+- **Versenytárs-elemzés részletes szekció**: A kutatás első verzióban rövid megjegyzésként belefoglalható a targeting javaslatokba.
 
 ### Architecture Approach
 
-The architecture follows a tool-use-driven incremental data capture pattern. Claude acts as the conversational driver, calling `classify_campaign` after initial discovery and `update_brief` throughout the conversation to incrementally save structured data. The server composes modular prompts (base + type-specific modules), executes tool calls, and streams both text and structured data events to the client via dual-channel SSE.
+A v1.1 az existing stateless chat architektúrát (useChat hook -> SSE streaming -> briefState round-trip) két új komponenssel bővíti: approval flow (új API endpoint + háttérfeldolgozás) és research pipeline (külön LLM hívás, nem a chat flow része). A kritikus design decision: **a research NEM a chat SSE stream-ben fut**. Külön `/api/approve-brief` route, saját `maxDuration` budget-tel, és a válasz azonnal visszamegy a kliensnek ("Köszönjük"). Az AI kutatás a `after()` callback-ben fut, eredménye Vercel KV-ba kerül, és onnan generálódik az XLSX + PM email. Ez szétválasztja a felhasználói UX-et (gyors) a háttérmunkától (lassú).
 
 **Major components:**
-1. **Prompt Registry** (`lib/prompts/`) -- Base prompt + composable type-specific modules, dynamically assembled per conversation
-2. **Campaign Type Definitions** (`lib/campaign-types/`) -- Self-contained definitions per type: question sets, Zod field schemas, section renderers
-3. **Tool Definitions** (`lib/tools/`) -- `classify_campaign` and `update_brief` with strict Zod schemas for structured output
-4. **Chat API Route** (`app/api/chat/`) -- Orchestrates Claude calls with tools, manages prompt composition, handles multi-turn tool execution loop
-5. **Brief State Manager** (`hooks/useBrief.ts`) -- Client-side accumulation of partial brief data from SSE events
-6. **Section Registry** (`lib/report/`) -- Maps section keys to render functions for PDF, email, and editor -- decouples data shape from rendering
-7. **Dynamic Editor** (`components/BriefEditor.tsx`) -- Schema-driven form rendering instead of hardcoded 418-line JSX
+1. **Extended Chat Pipeline (modified)** - A meglévő `/api/chat` route bővített tool definíciókkal (`update_brief` kap új mezőket), de agentic loop azonos. A prompt bővítés a kulcs: a questioning modulok kiegészülnek az új business mezőkkel.
+2. **Approval Flow (new)** - `/api/approve-brief` route kapja a jóváhagyott briefData-t, azonnali success response-szal válaszol, és `after()` callback-ben indítja a research pipeline-t. BriefEditor átalakítás: email input eltávolítása, PDF letöltés top-level action, "Jóváhagyom" gomb replace "Jóváhagyás és küldés".
+3. **Research Pipeline (new)** - `lib/research/pipeline.ts` orchestrálja a Claude + web_search tool hívást, nem streamed a kliensnek. A `pause_turn` stop reason kezelése (multi-turn). Output: ResearchResults interface (structured data, nem szabadszöveg). Session-höz kötött state (Vercel KV), TTL 24h.
+4. **XLSX Generator (new)** - `lib/xlsx/generate.ts` két fájlt generál template-ekből: Agency Brief (ügyfél adatok) + Mediaplan (AI kutatás adatok). ExcelJS `readFile()` -> cell manipulation -> `writeBuffer()`. Cell mapping config (manual analysis a template struktúrához).
+5. **PM Email Sender (new)** - `lib/research/send-results.ts` SendGrid-el két XLSX-et csatol, HTML summary email body. Meglévő pattern kiterjesztése (base64 encoding, MIME type különbség: `application/vnd.openxmlformats-officedocument.spreadsheetml.sheet`).
+
+**Data flow kritikus szakaszok:**
+- **Phase 1 (chat)**: Stateless marad, briefState round-trip SSE-n keresztül
+- **Phase 2 (approval)**: briefData átadás KV-ba session ID-val
+- **Phase 3 (research)**: Server-only, briefData KV-ból olvasás, ResearchResults KV-ba írás
+- **Phase 4 (xlsx)**: Buffer generálás memóriában (nem fájlrendszer)
+- **Phase 5 (email)**: SendGrid csatolmány base64 encoding, vagy Vercel Blob link ha > 3.5 MB
 
 ### Critical Pitfalls
 
-1. **Regex JSON extraction will break with dynamic schemas** -- The current `BRIEF_JSON_START/END` pattern fails ~10% of the time with the fixed schema and will fail far more with dynamic schemas. Use Anthropic structured outputs (`output_config.format` + Zod) as the FIRST change. Separate conversation streaming from data extraction.
+1. **Vercel function timeout az AI research pipeline-ban** - Az AI kutatás (5-10 web search + szintézis) 60-120 másodpercig tarthat. Hobby plan default 10s timeout instant fail. **Megelőzés**: Fluid Compute engedélyezése (300s default), `maxDuration = 300` az approve route-on, research és chat szétválasztása, `max_uses: 5-8` a web search tool-on.
 
-2. **Survey fatigue from more questions** -- Adaptive questioning risks adding questions (20-30 for hybrid types) instead of replacing them. Hard cap at 12-15 questions, priority-rank questions per type, skip already-answered topics. Target: 7-10 minute completion time.
+2. **Stateless architektúra + háttérfeldolgozás = adat-vesztés** - A v1.0 briefState csak a kliens memóriájában él. Ha az ügyfél bezárja a tabot az approve után, a research output elvész (nincs hová írni). **Megelőzés**: Vercel KV bevezetése session state tárolásra, session ID generálás (UUID), TTL 24h, polling endpoint a research státuszhoz (`GET /api/research/[sessionId]/status`).
 
-3. **Context window drift in long conversations** -- Full conversation history grows to 15-30K tokens with adaptive flows. Claude forgets early answers or deprioritizes instructions. Mitigation: incremental data capture via tool calls (don't rely on re-reading), keep collected-data summary near the end of messages (recency bias).
+3. **Vercel 4.5 MB response body limit** - Egy részletes XLSX (sok sheet, formázás) + PDF base64 kódolva (33% overhead) könnyen túllépi a limitet. **Megelőzés**: Vercel Blob köztes tárolás, csak URL visszaadása a kliensnek. SendGrid emailben: ha attachment > 3.5 MB, link használata inline attachment helyett.
 
-4. **Dynamic TypeScript types without runtime validation** -- TypeScript evaporates at runtime. All Claude output MUST pass through Zod validation before reaching React state. Zod schema = single source of truth for compile-time types AND runtime validation.
+4. **AI hallucináció marketing adatokban** - A Claude CPM rátákat, KPI-kat generál, ami kontextus-függő. "Hihető de hamis" számok reputációs és jogi kockázatot jelentenek. **Megelőzés**: Citations használata (web_search tool automatikusan forrást ad), számadatot CSAK citálható forrásból kiírni, tartomány (range) használata egyetlen szám helyett ("2-6 EUR" nem "3.4 EUR"), `allowed_domains` filtering megbízható forrásokra, explicit disclaimer az output-ban ("Az AI-alapú kutatás tájékoztató jellegű").
 
-5. **PDF template crashes with dynamic sections** -- @react-pdf/renderer has known bugs with conditional rendering of Page/View components. Never conditionally render Page components. Generate PDF server-side only (already the case). Test with max-length data for every field.
+5. **SheetJS npm vulnerability és telepítési bonyodalom** - Az npm registry `xlsx` csomagjának 0.18.5 verziója CVE-2023-30533 (Prototype Pollution) sebezhetőséget tartalmaz, a SheetJS csapat nem publikál npm-re. **Megelőzés**: ExcelJS használata SheetJS helyett - aktívan karbantartott, buffer-alapú, serverless-kompatibilis.
 
 ## Implications for Roadmap
 
-Based on research, suggested phase structure:
+A research alapján az építési sorrend szigorúan dependency-driven. Párhuzamosítási lehetőség minimális - a capability-k lineárisan függenek egymástól.
 
-### Phase 1: Type System & Schema Foundation
+### Phase 1: Bővített séma és adatgyűjtés
+**Rationale:** Az összes többi phase az Agency Brief mezőire épít. A prompt és séma bővítés KELL HOGY előzze meg a jóváhagyási flow-t és a research-öt, mert azok inputja a kiterjesztett briefData.
 
-**Rationale:** Everything depends on the new type system. Campaign type definitions, Zod schemas, and the BriefData type structure are imported by every other component. This must be stable before anything else is built.
-**Delivers:** Campaign type definitions (4 types), Zod schemas for BriefData (base + type-specific extensions), tool schemas (classify_campaign, update_brief), TypeScript types derived from Zod.
-**Addresses:** Flexible BriefData schema (P1 feature), foundation for all type-specific features.
-**Avoids:** Pitfall 4 (dynamic types without runtime validation), Pitfall 1 (preparing structured output schemas).
-**Stack:** Install Zod v4, upgrade @anthropic-ai/sdk to ^0.74.0, remove unused `ai` package.
+**Delivers:**
+- Zod séma kiegészítése 25+ mezővel (kontakt adatok, kampány részletek, checkbox mezők)
+- Prompt bővítés természetes kérdezési flow-val (NEM form-jellegű)
+- `update_brief` tool field descriptions kiterjesztése
+- `brief-sections.ts` új field definition-ök
+- PDF és email template-ek bővítése az új mezőkre
 
-### Phase 2: Prompt System & Adaptive Questioning Engine
+**Addresses:**
+- Bővített strukturált adatgyűjtés (FEATURES.md table stakes)
+- Intelligens összevonás meglévő és új mezők között (FEATURES.md differentiator)
 
-**Rationale:** The prompt system and tool-use-based data extraction are the core behavioral change. Without this, the AI still asks generic questions regardless of campaign type.
-**Delivers:** Modular prompt composition (base + type modules), chat API refactor with tool use loop, `classify_campaign` and `update_brief` tool execution, dual-channel SSE (text + brief_update events).
-**Addresses:** Campaign type detection (P1), type-specific question sets (P1), smart question ordering (P1), adaptive deepening (P1).
-**Avoids:** Pitfall 1 (replace regex extraction with tool use), Pitfall 2 (two-step classification with user confirmation), Pitfall 3 (incremental data capture prevents context drift), Pitfall 5 (question budget enforcement in prompt).
+**Avoids:**
+- Hosszú form-jellegű kikérdezés (FEATURES.md anti-feature) - a prompt csoportosítva, konverzációsan kérdez
 
-### Phase 3: Client-Side State & UI Adaptation
+**Research flag:** SKIP - standard Zod + prompt extension pattern, jól dokumentált
 
-**Rationale:** UI changes are cosmetic until the engine produces type-specific data. Once Phase 2 delivers structured data events, the client needs to accumulate and display them.
-**Delivers:** `useBrief` hook (replaces briefData in useChat), dynamic BriefEditor (schema-driven rendering), type detection UX (confirmation UI), progress indication, removal of PDF upload flow.
-**Addresses:** Dynamic BriefEditor (P1), progress indication (P1), brief summary/review adaptation.
-**Avoids:** Pitfall 7 (schema-driven editor instead of hardcoded 1000+ line JSX).
+### Phase 2: Jóváhagyási flow és approval endpoint
+**Rationale:** A jóváhagyási flow a trigger az AI kutatáshoz. Az `/api/approve-brief` endpoint létrehozása szükséges MIELŐTT a research pipeline megépül, mert ő indítja a háttérfolyamatot.
 
-### Phase 4: Dynamic Report System
+**Delivers:**
+- BriefEditor átalakítás (email input eltávolítás, "Jóváhagyom" gomb, PDF letöltés mindig elérhető)
+- `/api/approve-brief` route (stub verzió: azonnali success, background placeholder)
+- "Köszönjük" záró képernyő
+- Session ID generálás (UUID) a kliensen
+- Vercel KV setup (infrastructure)
 
-**Rationale:** Reports consume data from the new schema, which must be stable before templates are refactored. PDF and email templates depend on both the schema (Phase 1) and the editor (Phase 3) for data shape validation.
-**Delivers:** Section registry for PDF and email, campaign-type-specific PDF sections, campaign-type-specific email sections, PDF download functionality for clients.
-**Addresses:** Dynamic report sections (P1), PDF download (P2).
-**Avoids:** Pitfall 6 (PDF template breaks with dynamic sections -- use section registry pattern, never conditionally render Page components).
+**Addresses:**
+- Ügyfél jóváhagyási flow (FEATURES.md table stakes)
+- Email cím eltávolítása a flow-ból (FEATURES.md table stakes)
+- "Köszönjük" záró képernyő (FEATURES.md differentiator)
 
-### Phase 5: Polish & Differentiators
+**Avoids:**
+- Ügyfél bevárása az AI kutatásra (FEATURES.md anti-feature) - fire-and-forget pattern
+- Szerkeszthető jóváhagyó form (FEATURES.md anti-feature) - read-only + vissza a chatbe
 
-**Rationale:** After the core adaptive flow works end-to-end, add competitive differentiators based on real usage data.
-**Delivers:** Quick-reply buttons, brief quality scoring, agency-side enrichment notes, localStorage session backup, contextual explanations for specialist terms.
-**Addresses:** P2 features from the prioritization matrix.
+**Research flag:** SKIP - Next.js API route + React state machine, standard pattern
+
+### Phase 3: AI háttérkutatás és research pipeline
+**Rationale:** Az approve endpoint trigger-e után építhető a research logika. A Phase 3 a legsarkalatosabb technikai kihívás: web search tool integráció, structured output parsing, hallucination mitigálás.
+
+**Delivers:**
+- `lib/research/pipeline.ts` - Claude + web_search_20250305 tool orchestration
+- `lib/research/prompts.ts` - research system prompt (channel mix, KPI becslés, targeting, versenytárs-elemzés)
+- `lib/research/types.ts` - ResearchResults interface (structured schema)
+- `pause_turn` stop reason kezelés multi-turn-ben
+- `after()` integráció az approve route-ban (background execution)
+- Vercel KV írás/olvasás (session-based research state)
+- Polling endpoint (`GET /api/research/[sessionId]/status`)
+
+**Uses:**
+- Anthropic SDK web_search_20250305 tool (STACK.md)
+- Vercel KV session state tárolás (STACK.md)
+- Next.js after() background execution (STACK.md)
+
+**Implements:**
+- Research Pipeline (ARCHITECTURE.md component)
+- ResearchResults structured output (ARCHITECTURE.md data flow)
+
+**Addresses:**
+- AI háttérkutatás (FEATURES.md table stakes)
+- Csatorna mix javaslat (FEATURES.md table stakes)
+- KPI becslés csatornánként (FEATURES.md table stakes)
+- Targeting javaslatok (FEATURES.md table stakes)
+- Iparág-specifikus benchmark-ok (FEATURES.md differentiator)
+- Magyar piaci árszintek (FEATURES.md differentiator)
+
+**Avoids:**
+- Élő platform API hívások (FEATURES.md anti-feature) - az AI tudásából becsül
+- Automatikus bid/budget optimalizáció (FEATURES.md anti-feature) - tervezés, nem futtatás
+- Pontos ROI garancia (FEATURES.md anti-feature) - explicit disclaimer
+
+**Critical pitfall mitigations:**
+- CRIT-1 (timeout): Fluid Compute, maxDuration=300, max_uses=5-8
+- CRIT-2 (adat-vesztés): Vercel KV + session ID + polling
+- CRIT-4 (hallucináció): Citations, range-ek, allowed_domains, disclaimer
+
+**Research flag:** MEDIUM DEPTH - Phase-specific research szükséges:
+- Web search tool API (pause_turn kezelés, encrypted_content multi-turn)
+- Magyar piaci benchmark források (allowed_domains lista)
+- Prompt engineering hallucination mitigation-höz (range vs exact values)
+
+### Phase 4: XLSX generálás template-ekből
+**Rationale:** Az XLSX tartalom a Phase 3 research outputja + Phase 1 briefData. A Phase 4 KELL HOGY követi a Phase 3-at, mert a Mediaplan sheet a ResearchResults-ból generálódik.
+
+**Delivers:**
+- ExcelJS dependency telepítés
+- XLSX template cell-mapping analízis (manual work: megnyitni mindkét template-et, azonosítani a cell pozíciókat)
+- `lib/xlsx/generate.ts` - két függvény: `generateAgencyBriefXlsx()` + `generateMediaplanXlsx()`
+- `lib/xlsx/cell-mapping.ts` - config: melyik mező melyik cellába kerül
+- Agency Brief template kitöltés (ügyfél adatok, checkbox TRUE/FALSE)
+- Mediaplan template kitöltés (fejléc: partner adatok, kampány név, időszak, keretösszeg + PPC sorok: AI-generált kampány struktúra)
+- Buffer-alapú output (nem fájlrendszer)
+
+**Uses:**
+- ExcelJS ^4.4.0 (STACK.md)
+
+**Implements:**
+- XLSX Generator (ARCHITECTURE.md component)
+- Template-based filling (ARCHITECTURE.md pattern)
+
+**Addresses:**
+- Agency Brief XLSX kitöltés (FEATURES.md table stakes)
+- Mediaplan XLSX kitöltés (FEATURES.md table stakes)
+- Checkbox kezelés (FEATURES.md table stakes)
+- Összeg számítások (FEATURES.md table stakes)
+- Dinamikus PPC sor generálás (FEATURES.md differentiator)
+
+**Avoids:**
+- XLSX generálás from scratch (FEATURES.md anti-feature) - template-based megőrzi a ROI Works design-t
+- XLSX szerkesztő az UI-ban (FEATURES.md anti-feature) - a PM Excel-ben dolgozik
+
+**Critical pitfall mitigations:**
+- MOD-1 (SheetJS vulnerability): ExcelJS használata
+- MOD-2 (memory pressure): Külön route az XLSX generálásnak, nem a PDF-fel együtt
+- MIN-2 (formázás edge cases): Template egyszerűnek tartása (táblázatos adatok, alapvető formázás, NINCS beágyazott kép/makró)
+
+**Research flag:** LOW DEPTH - Phase-specific research szükséges:
+- ROI Works template struktúra analízis (cell mapping manual work)
+- ExcelJS dynamic row insertion (formázás másolása)
+
+### Phase 5: PM email XLSX csatolmányokkal
+**Rationale:** Az email a workflow végpontja - minden előző phase output-ja (briefData, research, XLSX-ek) itt összefut. A Phase 5 a legkisebb kockázat, mert a SendGrid pattern már működik PDF-fel.
+
+**Delivers:**
+- `lib/research/send-results.ts` - PM email sender
+- SendGrid template bővítés (research summary HTML body)
+- XLSX base64 encoding + csatolmány konfiguráció
+- Email subject és body az ügyfél adataival (cégnév, kampány név, összefoglaló)
+- (Opcionális) Vercel Blob fallback ha attachment > 3.5 MB
+
+**Uses:**
+- @sendgrid/mail meglévő (STACK.md)
+- Vercel Blob opcionális (STACK.md)
+
+**Implements:**
+- PM Email Sender (ARCHITECTURE.md component)
+- SendGrid attachment pattern extension (ARCHITECTURE.md)
+
+**Addresses:**
+- PM email XLSX csatolmányokkal (FEATURES.md table stakes)
+- Két XLSX fájl csatolása (FEATURES.md table stakes)
+- Email tartalom bővítés (FEATURES.md table stakes)
+- Email subject és body az ügyfél adataival (FEATURES.md differentiator)
+
+**Avoids:**
+- Email küldés az ügyfélnek is (FEATURES.md anti-feature) - az ügyfél PDF-et kap (letöltés), a PM XLSX-eket kap (email)
+- Webhook / Slack / CRM integráció (FEATURES.md anti-feature) - email-first
+
+**Critical pitfall mitigations:**
+- CRIT-3 (4.5 MB limit): Vercel Blob köztes tárolás, link fallback
+- MOD-4 (base64 overhead): Méret becslés, fallback link 3.5 MB felett
+
+**Research flag:** SKIP - SendGrid attachment pattern 1:1 adaptálható
 
 ### Phase Ordering Rationale
 
-- **Phase 1 before everything** because Zod schemas are imported by tools, prompts, editor, and reports. Changing the schema later would cascade changes across the entire codebase.
-- **Phase 2 before Phase 3** because UI rendering of dynamic data requires the engine to produce dynamic data first. Building the editor before the engine means working with mock data that won't match reality.
-- **Phase 3 before Phase 4** because the report system should render the same data the editor displays. The editor validates that the data shape is correct before templates depend on it.
-- **Phase 4 is deliberately last** among core phases because PDF generation is the most fragile component (known react-pdf bugs) and benefits from a stable, well-tested data shape.
-- **Phase 5 is independent** -- features can be added incrementally post-launch based on user feedback.
+A phase-ek sorrendje **dependency-driven**, nem feature-value alapú:
+
+1. **Séma előbb, mint flow**: A briefData struktúra kell hogy végleges legyen mielőtt a jóváhagyási flow kezeli.
+2. **Approval előbb, mint research**: Az approve endpoint a trigger - nem lehet research-öt indítani, ha nincs trigger pont.
+3. **Research előbb, mint XLSX**: A Mediaplan tartalma a research output - nem generálható adatok nélkül.
+4. **XLSX előbb, mint email**: Az email csatolmánya az XLSX - nem küldhető ami nincs.
+
+**Párhuzamosítási lehetőség minimális**: Az 1-2-3-4-5 szekvencia nem tördelő. Egyedüli kivétel: a Phase 1 (séma) és Phase 2 (UI) között a UI munka **részben** párhuzamosítható, ha mock adatokkal dolgozik a fejlesztő.
+
+**Mitigáció stratégia**: Minden phase független deployable increment. Ha a Phase 3 elhúzódik (AI kutatás komplexitás), a Phase 1+2 már értéket ad (bővített adatgyűjtés + egyszerűbb approval flow).
 
 ### Research Flags
 
-Phases likely needing deeper research during planning:
-- **Phase 2:** The multi-turn tool execution loop within a single SSE connection is a non-trivial implementation pattern. The Claude API's tool use + streaming interaction needs careful prototyping. Research the exact event sequence for `stop_reason: tool_use` within a stream.
-- **Phase 4:** @react-pdf/renderer's conditional rendering bugs need direct testing with the specific version (4.3.2). The section registry pattern is sound in theory but needs validation against react-pdf's rendering model.
+**Needs research:**
+- **Phase 3 (AI research)**: MEDIUM DEPTH
+  - Web search tool API nuances (pause_turn, encrypted_content, multi-turn continuation)
+  - Magyar piaci benchmark források (allowed_domains whitelist összeállítása)
+  - Hallucination mitigation prompt engineering (range vs exact, citation enforcement)
+  - ResearchResults schema finalizálás (mely mezők kellenek a Mediaplan kitöltéshez)
 
-Phases with standard patterns (skip research-phase):
-- **Phase 1:** Zod schema definition and TypeScript type derivation are well-documented, established patterns. No research needed.
-- **Phase 3:** React state management and conditional UI rendering are standard. The `useBrief` hook follows established patterns.
-- **Phase 5:** All features are standard UI/UX additions with no novel technical challenges.
+- **Phase 4 (XLSX)**: LOW DEPTH
+  - ROI Works template struktúra analízis (manual cell mapping - nem automatizálható)
+  - ExcelJS dynamic row insertion API (formázás másolása a template sorokból)
+
+**Standard patterns (skip research-phase):**
+- **Phase 1 (séma)**: Zod schema extension + prompt engineering - well-documented
+- **Phase 2 (approval)**: Next.js API route + React state machine - well-documented
+- **Phase 5 (email)**: SendGrid attachment - meglévő pattern adaptálása
 
 ## Confidence Assessment
 
 | Area | Confidence | Notes |
 |------|------------|-------|
-| Stack | HIGH | Verified against official Anthropic docs, npm registry, Zod v4 release notes. Minimal additions to proven stack. |
-| Features | MEDIUM-HIGH | Feature landscape well-researched with competitor analysis and practitioner sources. Campaign type question matrices are comprehensive but need validation with ROI Works domain experts. |
-| Architecture | HIGH | Tool-use pattern verified against official Anthropic docs (GA). Modular prompt composition is an established pattern. Dual-channel SSE is the main implementation risk. |
-| Pitfalls | HIGH | Based on direct codebase analysis, official docs, and verified community issues (react-pdf bugs). Survey fatigue research is MEDIUM confidence. |
+| Stack | **HIGH** | ExcelJS, Anthropic Web Search Tool, SendGrid, Next.js after() - mind hivatalos docs alapján, verified npm package-ek. Egyetlen új dependency (ExcelJS), a többi meglévő stack kiterjesztése. |
+| Features | **MEDIUM-HIGH** | ROI Works template-ek analízise (elsődleges forrás: HIGH), iparági marketing workflow-k (MEDIUM), UX patterns (HIGH - NN/G). A feature prioritás egyértelmű, de az AI kutatás output struktúrája (ResearchResults interface) finomításra szorul a template cell mapping analízis után. |
+| Architecture | **HIGH** | Next.js 16 after() API stable (official docs v16.1.6), Vercel limits dokumentáltak (Fluid Compute, response size, KV), Anthropic web_search_20250305 tool official docs. A stateless -> stateful transition jól definiált pattern (session ID + KV). |
+| Pitfalls | **HIGH** | Vercel docs (timeout, limits), Anthropic docs (hallucination mitigation, citations), SheetJS npm issue (GitHub), ExcelJS serverless use (community consensus). A critical pitfalls mind official source-okból származnak. |
 
-**Overall confidence:** HIGH
+**Overall confidence:** **HIGH**
+
+A stack és architektúra döntések official docs alapján vannak, a pitfalls verifikáltak production use case-ekkel. Az egyetlen MEDIUM confidence terület a ResearchResults -> Mediaplan mapping - ez a Phase 4 template analíziséig nem finalizálható.
 
 ### Gaps to Address
 
-- **Zod v4 discriminated union on nested keys**: `z.discriminatedUnion("campaign.type")` does NOT support nested discriminator keys. Must use top-level `campaign_type` field or fall back to `z.union()`. Validate during Phase 1 implementation.
-- **Multi-turn tool execution in SSE stream**: The server must handle Claude -> tool_result -> Claude cycles while keeping the SSE connection open. No verified reference implementation found. Prototype early in Phase 2.
-- **Question budget per campaign type**: Research suggests 12-15 questions max, but the actual must-ask vs. nice-to-have prioritization per type needs domain expert input from ROI Works.
-- **Hungarian language fidelity**: Claude's Hungarian output quality for specialist marketing terms (GRP, reach, frequency in Hungarian context) needs testing. The model may default to English for technical terms.
-- **First-call latency for structured outputs**: Anthropic caches compiled grammars for 24h. First call per schema is slower. Measure actual latency impact during Phase 2 and consider pre-warming strategies.
+1. **ROI Works template cell mapping**: A `docs/ROI_Mediaplan/` XLSX fájlok pontos struktúrája (melyik cella melyik mező) manuális analízist igényel. Ez a Phase 4 research-phase témája. A template-ek változása esetén a cell mapping config manuálisan frissítendő.
+
+2. **ResearchResults interface finalizálás**: A Phase 3 ResearchResults schema-ja jelenleg high-level (channelMix, targetingInsights, kpiBenchmarks). A végleges séma függ a Mediaplan template struktúrájától - milyen mezők kellenek egy PPC sorhoz (kampány cél, típus, csatorna, hirdetés típus, dátum, megjelenés, kattintás, konverzió, CPM, CPC, teljes ár). A Phase 3 és Phase 4 között egy validation loop szükséges.
+
+3. **Magyar piaci benchmark források**: Az AI kutatás `allowed_domains` listája építendő. Megbízható magyar marketing adatforrások whitelist-je (pl. Statista HU, magyar marketing blogok, platform-specifikus magyar ár-listák). Ez a Phase 3 research-phase része.
+
+4. **Hallucination detection heurisztikák**: A prompt engineering mellett érdemes runtime validation is (kerek számok túlsúlya, forrás nélküli állítások detektálása). Ez Phase 3 optional enhancement - az MVP-ben a prompt-level guardrails elégségesek.
+
+5. **Vercel Blob vs inline attachment decision logic**: A Phase 5-ben meg kell határozni a pontos küszöböt (3.5 MB? 4 MB?) ahol az email inline attachment-ről Blob link-re vált. Méretbecslési logika az XLSX generálás után (buffer size ellenőrzés).
 
 ## Sources
 
 ### Primary (HIGH confidence)
-- [Anthropic Structured Outputs Documentation (GA)](https://platform.claude.com/docs/en/build-with-claude/structured-outputs) -- structured output API, zodOutputFormat, streaming compatibility
-- [Anthropic Tool Use Documentation](https://platform.claude.com/docs/en/agents-and-tools/tool-use/overview) -- multi-turn patterns, pricing, streaming
-- [Anthropic SDK TypeScript (npm)](https://www.npmjs.com/package/@anthropic-ai/sdk) -- v0.74.0 verification
-- [Zod v4 Release Notes](https://zod.dev/v4) -- v4.3.6, discriminated unions, performance
-- [Zod API Documentation](https://zod.dev/api) -- discriminated union API, limitations
-- [@react-pdf/renderer Issues](https://github.com/diegomura/react-pdf/issues/3164) -- conditional rendering bugs, dynamic page breaks
+- [Vercel Functions Duration Docs](https://vercel.com/docs/functions/configuring-functions/duration) - timeout limits, Fluid Compute
+- [Vercel Functions Limitations](https://vercel.com/docs/functions/limitations) - 4.5 MB response body, memory limits
+- [Vercel Fluid Compute](https://vercel.com/docs/fluid-compute) - 300s default, 800s max
+- [Vercel Blob](https://vercel.com/docs/vercel-blob) - large file storage
+- [Vercel KV](https://vercel.com/kb/guide/session-store-nextjs-redis-vercel-kv) - session state persistence
+- [Next.js after() API](https://nextjs.org/docs/app/api-reference/functions/after) - v16.1.6 official docs, stable since v15.1
+- [Anthropic Web Search Tool](https://platform.claude.com/docs/en/agents-and-tools/tool-use/web-search-tool) - full API reference, pause_turn, citations
+- [Anthropic Reduce Hallucinations](https://platform.claude.com/docs/en/test-and-evaluate/strengthen-guardrails/reduce-hallucinations) - range vs exact, citations
+- [Anthropic Web Search Pricing](https://claude.com/blog/web-search-api) - $10/1000 searches, supported models
+- [ExcelJS npm](https://www.npmjs.com/package/exceljs) - v4.4.0, 4M+ weekly downloads
+- [ExcelJS GitHub](https://github.com/exceljs/exceljs) - template loading, buffer I/O
+- [SendGrid Node.js Attachments](https://github.com/sendgrid/sendgrid-nodejs/blob/main/docs/use-cases/attachments.md) - base64 attachment pattern
+- [SheetJS npm issue #2667](https://github.com/SheetJS/sheetjs/issues/2667) - npm registry abandonment, CVE-2023-30533
 
 ### Secondary (MEDIUM confidence)
-- [PromptLayer: Modular Prompt Architecture](https://blog.promptlayer.com/prompt-routers-and-modular-prompt-architecture-8691d7a57aee/) -- prompt composition pattern
-- [Redis: Context Window Overflow](https://redis.io/blog/context-window-overflow/) -- context drift research
-- [Maxim AI: Context Window Management](https://www.getmaxim.ai/articles/context-window-management-strategies-for-long-context-ai-agents-and-chatbots/) -- mitigation strategies
-- [AgencyAnalytics: Client Onboarding Questions](https://agencyanalytics.com/blog/client-onboarding-questionnaire) -- practitioner question sets
-- [Sendible: Social Media Questionnaire](https://www.sendible.com/insights/social-media-questionnaire) -- social media brief questions
-- [Smashing Magazine: Conversational AI UX](https://www.smashingmagazine.com/2024/07/how-design-effective-conversational-ai-experiences-guide/) -- UX patterns
-- [LLM Prompt Sensitivity Research](https://arxiv.org/html/2602.04297) -- classification instability
-- Competitor analysis: HolaBrief, Briefly, Foreplay Briefs, The Brief AI -- feature landscape
+- [Capably.ai Media Planning Automation](https://www.capably.ai/resources/media-planning-automation) - iparági trend
+- [TAU Marketing Solutions AI Agents](https://taums.ai/ai-agents-in-media-planning-and-buying/) - iparági trend
+- [AdAmigo KPIs Cross-Platform](https://www.adamigo.ai/blog/top-7-kpis-for-cross-platform-ad-benchmarking) - benchmark adatok
+- [AI Digital Marketing KPIs 2026](https://www.aidigital.com/blog/digital-marketing-kpi) - benchmark adatok
+- [Planable Marketing Approval Process](https://planable.io/blog/marketing-approval-process/) - UX patterns
+- [NN/G Confirmation Dialogs](https://www.nngroup.com/articles/confirmation-dialog/) - UX best practices
+- [Material Design Confirmation](https://m2.material.io/design/communication/confirmation-acknowledgement.html) - design pattern
+- [Workshop Digital AI Hallucinations](https://www.workshopdigital.com/blog/ai-hallucinations-in-marketing/) - marketing specifikus hallucinációs kockázatok
+- [npm-compare: xlsx libraries](https://npm-compare.com/excel4node,exceljs,node-xlsx,xlsx,xlsx-populate) - library comparison
+- [ExcelJS Bundlephobia](https://bundlephobia.com/package/exceljs) - 1.08 MB package size
 
 ### Tertiary (LOW confidence)
-- [DEV.to: LLM JSON Output Problems](https://dev.to/acartag7/why-your-llm-returns-sure-heres-the-json-and-how-to-fix-it-2b1g) -- anecdotal but relevant
-- [Agenta: Structured Outputs Guide](https://agenta.ai/blog/the-guide-to-structured-outputs-and-function-calling-with-llms) -- general overview
-- [Ideta: Conversational Form Statistics](https://www.ideta.io/blog-posts-english/conversational-form-beats-web-form) -- vendor data, take with caution
+- ROI Works Agency Brief xlsx template - manual analysis (elsődleges forrás a template struktúrához, de internal document)
+- ROI Works Mediaplan xlsx template - manual analysis (elsődleges forrás a template struktúrához, de internal document)
 
 ---
-*Research completed: 2026-02-10*
+*Research completed: 2026-02-12*
 *Ready for roadmap: yes*

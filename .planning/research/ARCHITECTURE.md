@@ -1,536 +1,614 @@
 # Architecture Patterns
 
-**Domain:** Adaptive AI questioning system with dynamic data schemas and flexible report generation
-**Researched:** 2026-02-10
+**Domain:** Enhanced Brief + AI Background Research integration into existing Next.js brief assistant
+**Researched:** 2026-02-12
+**Focus:** Integration architecture for v1.1 features (extended data, approval flow, background AI research, xlsx generation, PM email)
 
-## Current Architecture (What We're Refactoring)
-
-```
-User -> [ChatInput] -> useChat hook -> /api/chat -> Claude API (single system prompt)
-                                                         |
-                                                    Streams text + BRIEF_JSON_START/END tags
-                                                         |
-                          useChat.checkForBriefData() <- parses JSON from streamed text
-                                                         |
-                          BriefEditor (fixed fields) -> /api/send-brief -> PDF + Email
-```
-
-**Core problems:**
-1. `lib/prompts.ts` is a single monolithic prompt with fixed 13-field sequence
-2. `types/chat.ts` has one rigid `BriefData` interface for all campaign types
-3. `BriefEditor` renders all sections unconditionally
-4. `pdf-template.tsx` and `email-template.ts` have hardcoded sections
-5. JSON extraction uses brittle `BRIEF_JSON_START/END` regex tags in streamed text
-
-## Recommended Architecture
-
-### High-Level System Flow
+## Existing Architecture (v1.0 -- What We're Extending)
 
 ```
-User enters chat (no PDF upload)
-        |
-   [1. Discovery Phase]
-   System prompt: generic opener + type detection instructions
-   Claude asks 2-3 broad questions (industry, goal, budget range)
-        |
-   [2. Type Classification]
-   Claude calls `classify_campaign` tool -> returns detected type(s)
-   Server injects type-specific prompt segments
-        |
-   [3. Adaptive Questioning Phase]
-   System prompt: base + type-specific question modules
-   Claude asks deep questions based on campaign type(s)
-   Each answer triggers `update_brief` tool with partial data
-        |
-   [4. Brief Assembly]
-   Server accumulates structured data from tool calls
-   Claude signals completion -> final brief assembled from tool data
-        |
-   [5. Dynamic Report]
-   BriefEditor renders only sections present in accumulated data
-   PDF/email templates compose from section registry
+User -> [Landing] -> [/brief chat page]
+                          |
+                     useChat hook -> POST /api/chat (SSE stream)
+                          |                |
+                     briefState           Claude API (claude-sonnet-4)
+                     round-trip            tool_use agentic loop:
+                          |                  classify_campaign
+                          |                  update_brief
+                          |                  suggest_quick_replies
+                          |                  complete_brief
+                          |
+                     phase: "complete" -> requestExtraction -> BriefEditor
+                          |
+                     [Email input] -> POST /api/send-brief -> PDF + SendGrid email
+                     [PDF download] -> POST /api/download-pdf -> PDF blob
 ```
 
-### Component Boundaries
+**Key existing constraints:**
+- Stateless server -- briefState lives on client, sent with every POST
+- SSE streaming with server-side tool execution loop (MAX_ITERATIONS=25)
+- BriefEditor is read-only (no editing), requires email for approval
+- SendGrid already handles PDF attachments (base64 encoded)
+- Vercel serverless deployment (Fluid Compute default: 300s, max: 800s on Pro)
 
-| Component | Responsibility | Communicates With |
-|-----------|---------------|-------------------|
-| **Prompt Registry** (`lib/prompts/`) | Stores base prompt + type-specific modules, composes final system prompt from detected types | Chat API route |
-| **Campaign Type Definitions** (`lib/campaign-types/`) | Defines question sets, field schemas, report sections per type (media, PPC, brand, social) | Prompt Registry, Schema system, Report system |
-| **Chat API Route** (`app/api/chat/`) | Orchestrates Claude calls with tools, manages prompt composition, handles tool execution | Claude API, Prompt Registry, Brief State |
-| **Tool Definitions** (`lib/tools/`) | Defines `classify_campaign` and `update_brief` tools with Zod schemas for structured output | Chat API Route |
-| **Brief State Manager** (`hooks/useBrief.ts`) | Accumulates partial brief data from tool calls, tracks completion status, manages type state | Chat hook, Editor, Report |
-| **Dynamic Editor** (`components/BriefEditor.tsx`) | Renders editable form sections based on which data fields exist in the brief | Brief State Manager |
-| **Report Generator** (`lib/report/`) | Composes PDF sections and email sections from a section registry based on brief data shape | Campaign Type Definitions, Brief State |
-
-### Data Flow (Detailed)
+## v1.1 Target Flow
 
 ```
-[Client]                    [Server /api/chat]              [Claude API]
-   |                              |                              |
-   |-- POST {messages} ---------> |                              |
-   |                              |-- Compose system prompt:     |
-   |                              |   base + type modules        |
-   |                              |-- messages + tools --------> |
-   |                              |                              |
-   |                              | <-- stream: text + tool_use  |
-   |                              |                              |
-   | <-- SSE: text chunks ------- |                              |
-   |                              |                              |
-   |                              |-- If tool_use: execute tool  |
-   |                              |   classify_campaign:         |
-   |                              |     -> store type in session |
-   |                              |     -> recompose prompt      |
-   |                              |   update_brief:              |
-   |                              |     -> merge partial data    |
-   |                              |     -> return to Claude      |
-   |                              |                              |
-   | <-- SSE: {tool_result} ----- |                              |
-   |     + brief_update event     |                              |
-   |                              |                              |
-   |-- Update useBrief state      |                              |
+User -> [Landing] -> [/brief chat page]
+                          |
+                     EXTENDED chat (more business fields via update_brief)
+                          |
+                     phase: "complete" -> requestExtraction -> BriefEditor (revised)
+                          |
+                     [PDF download -- NO email required]
+                     [Approve button] -> POST /api/approve-brief
+                          |                    |
+                     "Koeszoenoek" page         fires background AI research
+                     (client session ENDS)       via after() / waitUntil()
+                                                     |
+                                                AI research pipeline:
+                                                  1. Claude + web_search tool
+                                                  2. Channel mix, targeting, KPI
+                                                  3. Competitor analysis
+                                                     |
+                                                xlsx generation (ExcelJS)
+                                                  - Agency Brief template
+                                                  - Mediaplan template
+                                                     |
+                                                PM email via SendGrid
+                                                  - xlsx attachments
+                                                  - research summary HTML
 ```
 
-**Critical insight:** The server acts as tool executor. When Claude decides to call `update_brief`, the server extracts structured data and sends it back as a `tool_result`. The client receives both the text stream (for chat UI) AND structured data events (for brief accumulation).
+## Component Boundaries
 
-## Patterns to Follow
+| Component | Responsibility | New/Modified | Communicates With |
+|-----------|---------------|--------------|-------------------|
+| **Chat API** (`app/api/chat/route.ts`) | Agentic loop, tool execution, SSE streaming | MODIFIED -- extended tool definitions, new fields | Claude API, client |
+| **Tool definitions** (`lib/tools/definitions.ts`) | Tool schemas for Claude | MODIFIED -- extend update_brief field descriptions | Chat API |
+| **Tool handlers** (`lib/tools/handlers.ts`) | Server-side tool execution | MODIFIED -- validate new fields | Chat API |
+| **BriefState types** (`lib/tools/types.ts`) | briefState interface | MODIFIED -- no structural change, briefData accumulates new fields | All |
+| **Schemas** (`lib/schemas/`) | Zod validation for BriefData | MODIFIED -- add new business fields to BriefBaseSchema | Extraction, validation |
+| **Prompts** (`lib/prompts/`) | System prompt composition | MODIFIED -- extend question modules with new business fields | Chat API |
+| **BriefEditor** (`components/BriefEditor.tsx`) | Review + approval UI | MODIFIED -- remove email requirement, add approve button, PDF download | useChat, approve API |
+| **brief-sections** (`lib/brief-sections.ts`) | Section definitions for rendering | MODIFIED -- add new field definitions | BriefEditor, email, PDF |
+| **Approve API** (`app/api/approve-brief/route.ts`) | Accept briefData, trigger background research | **NEW** | BriefEditor, research pipeline |
+| **Research pipeline** (`lib/research/pipeline.ts`) | Orchestrate AI research calls | **NEW** | Claude API (web_search), approve API |
+| **Research prompts** (`lib/research/prompts.ts`) | System prompts for research AI | **NEW** | Research pipeline |
+| **Xlsx generator** (`lib/xlsx/generate.ts`) | Fill xlsx templates with data | **NEW** | Research pipeline, xlsx templates |
+| **PM email sender** (`lib/research/send-results.ts`) | Send xlsx + summary to PM | **NEW** | SendGrid, research pipeline |
 
-### Pattern 1: Modular Prompt Composition
+## Critical Architecture Decision: Background Research Without Persistence
 
-**What:** Break the monolithic system prompt into a base module + composable type-specific modules. The server composes the final prompt dynamically based on detected campaign type(s).
+### The Problem
 
-**When:** Every Claude API call. The system prompt changes as types are detected.
+After the client approves the brief and leaves, the server must:
+1. Run AI research (multiple Claude calls with web_search -- possibly 30-120s)
+2. Generate xlsx files from research results
+3. Email results to PM
 
-**Why:** A single prompt for all types either gets too long (confusing the model) or too generic (missing domain depth). Modular composition lets each type define its own expert-level questions while sharing the common brief structure.
+But: the current architecture is stateless. No database. The client is gone.
 
-**Example:**
+### Recommended Solution: `after()` with `waitUntil()` in the Approve API Route
+
+**Use Next.js `after()` (stable since v15.1, available in Next.js 16.1.1) in a dedicated `/api/approve-brief` route.**
 
 ```typescript
-// lib/prompts/base.ts
-export const BASE_PROMPT = `Te a ROI Works marketing ügynökség brief asszisztense vagy...
-[communication style, general rules]`;
+// app/api/approve-brief/route.ts
+import { after } from 'next/server';
 
-// lib/prompts/types/media-buying.ts
-export const MEDIA_BUYING_MODULE = `
-MÉDIAVÁSÁRLÁS SPECIFIKUS KÉRDÉSEK:
-Amikor médiavásárlási kampányról van szó, az alábbi területeket kérdezd ki:
-- Célzott GRP (Gross Rating Point)
-- Elvárt reach és frequency
-- Médiatípusok preferenciája (TV, rádió, outdoor, digital)
-- OTS (Opportunity To See) target
-- Viewability elvárások
-- Adblock penetráció relevanciája
-...`;
+export const maxDuration = 300; // 5 minutes (default with Fluid Compute)
 
-// lib/prompts/compose.ts
-export function composeSystemPrompt(
-  detectedTypes: CampaignType[]
-): string {
-  const typeModules = detectedTypes
-    .map(type => TYPE_MODULES[type])
-    .join('\n\n');
+export async function POST(request: Request) {
+  const { briefData } = await request.json();
 
-  return `${BASE_PROMPT}\n\n${typeModules}\n\n${TOOL_INSTRUCTIONS}`;
+  // Validate briefData
+  const parsed = BriefDataSchema.safeParse(briefData);
+  if (!parsed.success) {
+    return Response.json({ error: 'Invalid brief data' }, { status: 400 });
+  }
+
+  // Schedule background research AFTER response is sent
+  after(async () => {
+    try {
+      const researchResults = await runResearchPipeline(parsed.data);
+      const xlsxBuffers = await generateXlsxFiles(parsed.data, researchResults);
+      await sendPmEmail(parsed.data, researchResults, xlsxBuffers);
+    } catch (error) {
+      console.error('Background research failed:', error);
+      // Fallback: send partial results or error notification to PM
+      await sendErrorNotification(parsed.data, error);
+    }
+  });
+
+  // Immediately return success to client
+  return Response.json({ success: true });
 }
 ```
 
-**Confidence:** HIGH -- This is the standard modular prompt architecture pattern, verified across multiple sources (PromptLayer blog, Anthropic docs patterns).
+**Why this works:**
+- `after()` extends the serverless function lifetime via `waitUntil()` under the hood
+- The function's `maxDuration` applies to the TOTAL execution (response + after tasks)
+- Response returns immediately to client (< 1s) -- client sees "Koeszoenoek" page
+- Background task gets the remaining time (up to ~299s) for research
+- No database needed -- briefData is passed directly to the pipeline
+- No client connection needed -- pipeline runs server-side after response
 
-### Pattern 2: Claude Tool Use for Structured Data Extraction
+**Why NOT other options:**
 
-**What:** Replace the brittle `BRIEF_JSON_START/END` tag parsing with Claude's native tool use. Define `classify_campaign` and `update_brief` tools with strict Zod schemas. Claude calls these tools naturally during conversation, producing guaranteed-valid structured output.
+| Option | Why Not |
+|--------|---------|
+| Keep client connected during research | Bad UX -- client waits 1-3 minutes staring at a spinner. They already approved and want to leave. |
+| Add a database (Redis/Postgres) | Over-engineering. We need persistence for ONE async task, not a data layer. The brief is not accessed again after research. |
+| External queue (Inngest, QStash) | Extra dependency, extra cost, extra complexity for a single fire-and-forget job. `after()` is built-in. |
+| Vercel Cron Job | Not request-driven. Would require persistence to store pending jobs. |
 
-**When:** Throughout the conversation. Claude calls `classify_campaign` after initial discovery, and `update_brief` incrementally as it gathers information.
+### Time Budget Analysis
 
-**Why:**
-1. Tag-based extraction (`BRIEF_JSON_START/END`) is fragile -- partial JSON in streamed responses causes parse failures
-2. Tool use with `strict: true` guarantees schema-compliant output via Anthropic's constrained decoding
-3. Incremental `update_brief` calls capture data as it's gathered, not just at the end
-4. Claude naturally decides WHEN to capture data vs. when to keep asking
+Vercel Fluid Compute (Pro plan) default: 300s, configurable up to 800s.
 
-**Example:**
+| Step | Estimated Duration | Notes |
+|------|--------------------|-------|
+| Response to client | < 1s | JSON response, immediate |
+| AI research (3-5 web search calls) | 30-90s | Claude + web_search_20250305 tool, $10/1K searches |
+| Research analysis (1 Claude call) | 10-20s | Synthesize search results into structured data |
+| Xlsx generation (2 files) | 2-5s | ExcelJS read template + fill cells |
+| SendGrid email with attachments | 1-3s | Already proven pattern |
+| **Total background** | **~45-120s** | Well within 300s default |
+
+**Recommendation:** Keep `maxDuration = 300` (default). Only increase if research consistently times out in production.
+
+**Confidence:** HIGH -- `after()` is stable in Next.js 16, verified in official docs (v16.1.6). Vercel Fluid Compute duration limits verified from official Vercel docs.
+
+## AI Research Pipeline Architecture
+
+### Claude Web Search Tool (Server-Side)
+
+The Anthropic API has a built-in `web_search_20250305` server tool. This executes on Anthropic's servers -- we do NOT need to implement search ourselves.
 
 ```typescript
-// lib/tools/classify-campaign.ts
-import { z } from 'zod';
+// lib/research/pipeline.ts
+import Anthropic from '@anthropic-ai/sdk';
 
-export const CampaignTypeSchema = z.object({
-  primary_type: z.enum(['media_buying', 'performance', 'brand', 'social']),
-  secondary_types: z.array(
-    z.enum(['media_buying', 'performance', 'brand', 'social'])
-  ),
-  confidence: z.enum(['high', 'medium', 'low']),
-  reasoning: z.string(),
-});
+const anthropic = new Anthropic();
 
-export const classifyCampaignTool = {
-  name: 'classify_campaign',
-  description: 'Classify the campaign type based on conversation so far. Call this after the first 2-3 questions when you understand the campaign nature.',
-  strict: true,
-  input_schema: zodToJsonSchema(CampaignTypeSchema),
-};
+export async function runResearchPipeline(briefData: BriefData): Promise<ResearchResults> {
+  // Single Claude call with web_search tool -- Claude decides what to search
+  const response = await anthropic.messages.create({
+    model: 'claude-sonnet-4-20250514',
+    max_tokens: 8192,
+    system: buildResearchSystemPrompt(briefData),
+    messages: [
+      {
+        role: 'user',
+        content: buildResearchUserPrompt(briefData),
+      },
+    ],
+    tools: [
+      {
+        type: 'web_search_20250305',
+        name: 'web_search',
+        max_uses: 10,
+        user_location: {
+          type: 'approximate',
+          country: 'HU',
+          city: 'Budapest',
+          timezone: 'Europe/Budapest',
+        },
+      },
+    ],
+  });
 
-// lib/tools/update-brief.ts
-export const UpdateBriefSchema = z.object({
-  section: z.enum([
-    'company', 'campaign_basics', 'target_audience',
-    'channels', 'timeline', 'budget', 'competitors',
-    'media_specifics', 'performance_specifics',
-    'brand_specifics', 'social_specifics', 'notes'
-  ]),
-  data: z.record(z.string(), z.unknown()),
-});
+  // Handle pause_turn (long-running research may pause)
+  let finalResponse = response;
+  while (finalResponse.stop_reason === 'pause_turn') {
+    finalResponse = await anthropic.messages.create({
+      model: 'claude-sonnet-4-20250514',
+      max_tokens: 8192,
+      system: buildResearchSystemPrompt(briefData),
+      messages: [
+        { role: 'user', content: buildResearchUserPrompt(briefData) },
+        { role: 'assistant', content: finalResponse.content },
+      ],
+      tools: [
+        {
+          type: 'web_search_20250305',
+          name: 'web_search',
+          max_uses: 10,
+          user_location: {
+            type: 'approximate',
+            country: 'HU',
+            city: 'Budapest',
+            timezone: 'Europe/Budapest',
+          },
+        },
+      ],
+    });
+  }
 
-export const updateBriefTool = {
-  name: 'update_brief',
-  description: 'Save gathered brief data for a specific section. Call this when you have confirmed data for a section. Can be called multiple times.',
-  strict: true,
-  input_schema: zodToJsonSchema(UpdateBriefSchema),
-};
+  return parseResearchResponse(finalResponse);
+}
 ```
 
-**Confidence:** HIGH -- Anthropic structured outputs with `strict: true` are GA, Zod integration is officially supported in the TypeScript SDK via `zodOutputFormat()`. Streaming is compatible with tool use.
+**Key design decisions:**
+- Use `web_search_20250305` (Anthropic server-side tool) -- NOT Brave MCP, NOT custom scraping
+- Localize to Hungary (`country: 'HU'`) for relevant competitor/market data
+- `max_uses: 10` limits cost per brief ($0.10 max for search)
+- Handle `pause_turn` stop reason for long research turns
+- Non-streaming (we don't need to show progress -- client is gone)
 
-### Pattern 3: Discriminated Union for Campaign-Specific Data
+**Cost per brief research:** ~$0.10 (search) + ~$0.05-0.15 (tokens) = **~$0.15-0.25**
 
-**What:** Use TypeScript discriminated unions to model campaign-type-specific brief data. A `BriefData` type has shared fields (company, timeline, budget) plus type-specific extension fields gated by a `campaign_types` discriminant.
+**Confidence:** HIGH -- web_search tool verified in official Anthropic docs, pricing confirmed ($10/1K searches), supported on claude-sonnet-4.
 
-**When:** Type definitions, editor rendering, report generation.
-
-**Why:** The current flat `BriefData` interface cannot represent "media buying has GRP fields but PPC doesn't." Discriminated unions let TypeScript narrow the type at compile time, preventing impossible field access and guiding editor/report rendering.
-
-**Example:**
+### Research Output Structure
 
 ```typescript
-// types/brief.ts
-
-// Shared across all campaign types
-interface BriefBase {
-  company: CompanyInfo;
-  campaign_basics: CampaignBasics;
-  target_audience: TargetAudience;
-  channels: string[];
-  timeline: Timeline;
-  budget: Budget;
-  competitors: string[];
-  notes: string;
-}
-
-// Type-specific extensions
-interface MediaBuyingFields {
-  grp_target: string;
-  reach_target: string;
-  frequency_target: string;
-  media_types: string[];
-  ots_target: string;
-  viewability_requirements: string;
-}
-
-interface PerformanceFields {
-  landing_pages: string[];
-  ad_accounts: string[];
-  conversion_tracking: string;
-  roas_target: string;
-  cpa_target: string;
-  creative_timeline: string;
-}
-
-interface BrandFields {
-  brand_lift_goals: string;
-  message_recall_target: string;
-  creative_concept: string;
-  tonality: string;
-  positioning: string;
-}
-
-interface SocialFields {
-  organic_paid_mix: string;
-  platforms: string[];
-  content_types: string[];
-  community_management: string;
-  influencer_strategy: string;
-}
-
-// The actual brief type -- supports multi-type campaigns
-interface BriefData extends BriefBase {
-  campaign_types: CampaignType[];
-  type_specific: {
-    media_buying?: Partial<MediaBuyingFields>;
-    performance?: Partial<PerformanceFields>;
-    brand?: Partial<BrandFields>;
-    social?: Partial<SocialFields>;
+// lib/research/types.ts
+export interface ResearchResults {
+  // For Agency Brief xlsx
+  channelMix: {
+    recommendedChannels: Array<{
+      channel: string;
+      rationale: string;
+      estimatedBudgetShare: string;
+    }>;
   };
+  targeting: {
+    demographics: string;
+    interests: string[];
+    behaviors: string[];
+    lookalike: string;
+  };
+  kpiEstimates: {
+    estimatedReach: string;
+    estimatedCpm: string;
+    estimatedCpc: string;
+    estimatedConversionRate: string;
+  };
+  competitorAnalysis: Array<{
+    name: string;
+    website: string;
+    adChannels: string[];
+    keyMessage: string;
+    estimatedBudget: string;
+  }>;
+
+  // For Mediaplan xlsx
+  mediaplanData: {
+    channels: Array<{
+      platform: string;
+      format: string;
+      budget: string;
+      impressions: string;
+      clicks: string;
+      period: string;
+    }>;
+  };
+
+  // Raw research text for email summary
+  summary: string;
+  sources: Array<{ url: string; title: string }>;
 }
 ```
 
-**Why `Partial<>` + optional keys instead of discriminated union:** A brief is built incrementally during conversation. Fields arrive piece by piece. A strict discriminated union would require all fields or nothing. `Partial<>` + optional type-specific blocks lets us accumulate data progressively AND support multi-type campaigns (one brief covering both media buying and performance).
+## Xlsx Generation Architecture
 
-**Confidence:** HIGH -- TypeScript discriminated unions are a well-documented pattern. The `Partial<>` approach for incremental accumulation is a practical adaptation.
+### Library Choice: ExcelJS
 
-### Pattern 4: Section Registry for Dynamic Reports
-
-**What:** Define a registry mapping section keys to their render functions (for both PDF and email). The report generator iterates over sections present in the brief data and renders only those.
-
-**When:** PDF generation, email template generation, BriefEditor rendering.
-
-**Why:** The current `pdf-template.tsx` and `email-template.ts` have hardcoded sections. Adding a new campaign type would require modifying every template. A section registry decouples "what sections exist" from "how sections render."
-
-**Example:**
+**Use ExcelJS** because it can read existing xlsx templates, modify cells, and preserve formatting (styles, merged cells, conditional formatting).
 
 ```typescript
-// lib/report/section-registry.ts
-interface SectionRenderer {
-  key: string;
-  label: string;
-  order: number;
-  appliesTo: CampaignType[] | 'all';
-  renderPdf: (data: Record<string, unknown>) => React.ReactElement;
-  renderEmail: (data: Record<string, unknown>) => string;
-  renderEditor: (data: Record<string, unknown>, onChange: UpdateFn) => React.ReactElement;
+// lib/xlsx/generate.ts
+import ExcelJS from 'exceljs';
+import path from 'path';
+
+export async function generateAgencyBriefXlsx(
+  briefData: BriefData,
+  research: ResearchResults
+): Promise<Buffer> {
+  const templatePath = path.join(
+    process.cwd(),
+    'docs/ROI_Mediaplan/ROIworks _ TEMPLATE_ Agency campaign brief.xlsx'
+  );
+
+  const workbook = new ExcelJS.Workbook();
+  await workbook.xlsx.readFile(templatePath);
+
+  const ws = workbook.getWorksheet(1);
+  if (!ws) throw new Error('Agency brief worksheet not found');
+
+  // Fill cells based on template structure
+  // (exact cell mapping TBD during implementation -- requires template analysis)
+  fillAgencyBriefCells(ws, briefData, research);
+
+  return Buffer.from(await workbook.xlsx.writeBuffer());
 }
 
-const SECTION_REGISTRY: SectionRenderer[] = [
-  {
-    key: 'company',
-    label: 'Cegadatok',
-    order: 1,
-    appliesTo: 'all',
-    renderPdf: (data) => <CompanySectionPdf data={data} />,
-    renderEmail: (data) => companyEmailHtml(data),
-    renderEditor: (data, onChange) => <CompanySectionEditor data={data} onChange={onChange} />,
-  },
-  {
-    key: 'media_specifics',
-    label: 'Mediavásárlás részletek',
-    order: 10,
-    appliesTo: ['media_buying'],
-    renderPdf: (data) => <MediaSpecificsPdf data={data} />,
-    // ...
-  },
-  // ...
-];
+export async function generateMediaplanXlsx(
+  briefData: BriefData,
+  research: ResearchResults
+): Promise<Buffer> {
+  // Select correct mediaplan template based on campaign types
+  const templateName = selectMediaplanTemplate(briefData.campaign_types);
+  const templatePath = path.join(
+    process.cwd(),
+    `docs/ROI_Mediaplan/${templateName}`
+  );
 
-// Usage: filter applicable sections for this brief
-function getSectionsForBrief(brief: BriefData): SectionRenderer[] {
-  return SECTION_REGISTRY
-    .filter(section =>
-      section.appliesTo === 'all' ||
-      section.appliesTo.some(type => brief.campaign_types.includes(type))
-    )
-    .filter(section => {
-      // Only show if data exists for this section
-      const sectionData = getSectionData(brief, section.key);
-      return sectionData && Object.keys(sectionData).length > 0;
-    })
-    .sort((a, b) => a.order - b.order);
+  const workbook = new ExcelJS.Workbook();
+  await workbook.xlsx.readFile(templatePath);
+
+  // Fill mediaplan data
+  fillMediaplanCells(workbook, briefData, research);
+
+  return Buffer.from(await workbook.xlsx.writeBuffer());
 }
 ```
 
-**Confidence:** MEDIUM -- This is a standard registry/strategy pattern applied to React rendering. No library-specific concerns, but the exact interface will need iteration based on how `@react-pdf/renderer` handles conditional Page elements (known issue: conditional rendering can cause `Eo is not a function` errors in some versions).
+**Why ExcelJS over alternatives:**
 
-### Pattern 5: Server-Side Tool Execution with Client-Side Data Streaming
+| Library | Verdict | Reason |
+|---------|---------|--------|
+| **ExcelJS** | RECOMMENDED | Reads existing xlsx, preserves themes, modifies cells, writes to Buffer. Most popular (4M+ weekly downloads). |
+| xlsx-populate | Alternative | Better style preservation but lower maintenance, fewer downloads. |
+| xlsx-template | Not suitable | Placeholder-based (`${field}`) -- our templates have complex merged cells and formatting that need direct cell access. |
+| SheetJS (xlsx) | Not suitable for this | Reading is great, but writing with style preservation requires the paid Pro version. |
 
-**What:** The `/api/chat` route handles Claude tool calls server-side and streams BOTH text content AND structured data events to the client via SSE. The client receives two types of events: `text` (for chat UI) and `brief_update` (for data accumulation).
+**Template mapping approach:** The xlsx templates need manual cell-mapping analysis. During implementation, open each template, identify which cells correspond to which data fields, and create a mapping config.
 
-**When:** Every chat API call where Claude uses tools.
+**Confidence:** MEDIUM -- ExcelJS template reading is well-documented, but the exact cell mapping depends on template structure analysis that hasn't been done yet. This is a Phase-specific research task.
 
-**Why:**
-- Tool execution must happen server-side (Claude expects `tool_result` in the conversation)
-- But the client needs the structured data to update `useBrief` state in real-time
-- Dual-channel SSE keeps the existing streaming architecture while adding structured data
+## PM Email with Xlsx Attachments
 
-**Example:**
+Extends the existing SendGrid pattern from `send-brief/route.tsx`. No new patterns needed.
 
 ```typescript
-// app/api/chat/route.ts (simplified)
-async function handleStream(claudeStream, controller, encoder, briefState) {
-  for await (const event of claudeStream) {
-    if (event.type === 'content_block_delta' && event.delta.type === 'text_delta') {
-      // Stream text to client for chat UI
-      controller.enqueue(
-        encoder.encode(`data: ${JSON.stringify({ type: 'text', text: event.delta.text })}\n\n`)
-      );
-    }
-  }
+// lib/research/send-results.ts
+import sgMail from '@sendgrid/mail';
 
-  // After stream ends, check for tool use
-  if (response.stop_reason === 'tool_use') {
-    const toolUse = response.content.find(b => b.type === 'tool_use');
+export async function sendPmEmail(
+  briefData: BriefData,
+  research: ResearchResults,
+  xlsxBuffers: { agencyBrief: Buffer; mediaplan: Buffer }
+): Promise<void> {
+  sgMail.setApiKey(process.env.SENDGRID_API_KEY!);
 
-    if (toolUse.name === 'classify_campaign') {
-      const types = toolUse.input;
-      // Recompose prompt with type-specific modules
-      briefState.setCampaignTypes(types);
-      // Send type update to client
-      controller.enqueue(
-        encoder.encode(`data: ${JSON.stringify({ type: 'type_detected', ...types })}\n\n`)
-      );
-    }
+  const companyName = briefData.company_name || 'Ismeretlen';
 
-    if (toolUse.name === 'update_brief') {
-      const { section, data } = toolUse.input;
-      briefState.updateSection(section, data);
-      // Send data update to client
-      controller.enqueue(
-        encoder.encode(`data: ${JSON.stringify({ type: 'brief_update', section, data })}\n\n`)
-      );
-    }
+  const msg = {
+    to: process.env.PM_EMAIL!, // New env var for PM recipient
+    from: {
+      email: process.env.SENDGRID_FROM_EMAIL!,
+      name: 'ROI Works Brief AI',
+    },
+    subject: `AI Kutatasi eredmenyek: ${companyName}`,
+    html: generateResearchEmailHtml(briefData, research),
+    attachments: [
+      {
+        content: xlsxBuffers.agencyBrief.toString('base64'),
+        filename: `agency-brief-${companyName.toLowerCase().replace(/\s+/g, '-')}.xlsx`,
+        type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        disposition: 'attachment' as const,
+      },
+      {
+        content: xlsxBuffers.mediaplan.toString('base64'),
+        filename: `mediaplan-${companyName.toLowerCase().replace(/\s+/g, '-')}.xlsx`,
+        type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        disposition: 'attachment' as const,
+      },
+    ],
+  };
 
-    // Continue conversation with tool_result
-    // ... recursive call or loop
-  }
+  await sgMail.send(msg);
 }
 ```
 
-**Confidence:** MEDIUM -- Streaming + tool use is officially supported (GA), but the multi-turn tool execution loop within a single SSE connection needs careful implementation. The server must handle the Claude -> tool_result -> Claude cycle while maintaining the stream open.
+**Confidence:** HIGH -- identical pattern to existing `send-brief/route.tsx`, just with xlsx instead of PDF attachments.
+
+## Client Approval Flow (Modified BriefEditor)
+
+### Current Flow (v1.0)
+```
+BriefEditor -> email input -> "Jovahagy es kuldes" -> /api/send-brief -> success page
+```
+
+### New Flow (v1.1)
+```
+BriefEditor -> PDF download (always available, no email needed)
+            -> "Jóváhagyás" button (no email needed)
+            -> POST /api/approve-brief { briefData }
+            -> "Koeszoenoek" success page (client session ends)
+            -> Background: research + xlsx + PM email
+```
+
+**Key changes to BriefEditor:**
+1. Remove email input requirement for approval (email stays optional, for CC only)
+2. PDF download always available as top-level action
+3. "Jovahagy" button replaces "Jovahagy es kuldes"
+4. Success page says "Thank you" without mentioning email
+5. No longer calls `/api/send-brief` -- calls `/api/approve-brief` instead
+
+**The existing `/api/send-brief` route stays** (for potential future use or manual triggering), but is no longer in the primary flow.
+
+## Data Flow Diagram
+
+```
+Phase 1: EXTENDED CHAT (existing pattern, expanded)
+======================
+Client briefState <--SSE--> /api/chat <--> Claude (tool_use loop)
+                                            tools: classify_campaign
+                                                   update_brief (extended fields)
+                                                   suggest_quick_replies
+                                                   complete_brief
+
+Phase 2: APPROVAL (new)
+=======================
+BriefEditor --briefData--> POST /api/approve-brief
+                                |
+                           return { success: true } immediately
+                                |
+                           after(() => {
+                                |
+Phase 3: BACKGROUND RESEARCH (new, server-only)
+===============================================
+                           runResearchPipeline(briefData)
+                                |
+                           Claude API + web_search_20250305 tool
+                           (non-streaming, server-side only)
+                                |
+                           ResearchResults
+                                |
+Phase 4: DOCUMENT GENERATION (new, server-only)
+================================================
+                           generateAgencyBriefXlsx(briefData, research)
+                           generateMediaplanXlsx(briefData, research)
+                                |
+                           Buffer[] (xlsx files)
+                                |
+Phase 5: PM NOTIFICATION (extends existing SendGrid)
+=====================================================
+                           sendPmEmail(briefData, research, xlsxBuffers)
+                                |
+                           SendGrid email with xlsx attachments
+                           })
+```
+
+## New vs Modified Components Summary
+
+### New Files
+
+| File | Purpose | Dependencies |
+|------|---------|-------------|
+| `app/api/approve-brief/route.ts` | Approval endpoint, triggers background research | Research pipeline, Next.js `after()` |
+| `lib/research/pipeline.ts` | Orchestrates AI research with web_search tool | Anthropic SDK, research prompts |
+| `lib/research/prompts.ts` | System + user prompts for research AI | BriefData types |
+| `lib/research/types.ts` | ResearchResults interface | -- |
+| `lib/research/send-results.ts` | PM email with xlsx attachments | SendGrid, xlsx generator |
+| `lib/xlsx/generate.ts` | Fill xlsx templates from briefData + research | ExcelJS, xlsx templates |
+| `lib/xlsx/cell-mapping.ts` | Cell address mapping for each xlsx template | Template analysis (manual) |
+
+### Modified Files
+
+| File | Change | Impact |
+|------|--------|--------|
+| `lib/schemas/brief-base.ts` | Add new business fields (contact person, phone, KPI, message, etc.) | Schema changes propagate to tools, prompts, sections |
+| `lib/schemas/` type-specific | Extend type-specific fields for research inputs | Same as above |
+| `lib/prompts/base.ts` | Extend questioning to cover new business fields | More comprehensive data collection |
+| `lib/prompts/types/*.ts` | Extend type-specific question modules | Same |
+| `lib/tools/definitions.ts` | Extend update_brief field descriptions for new fields | AI knows about new fields |
+| `lib/brief-sections.ts` | Add new field definitions to sections | BriefEditor, email, PDF show new fields |
+| `lib/email-template.ts` | Add new section renderers for new fields | Email output includes new data |
+| `lib/pdf-template.tsx` | Add new section renderers | PDF output includes new data |
+| `components/BriefEditor.tsx` | Remove email requirement, add approve button, change success flow | UX change |
+| `app/brief/page.tsx` | Update success state handling | Minor |
+| `package.json` | Add `exceljs` dependency | -- |
+
+### Unchanged Files
+
+| File | Why Unchanged |
+|------|---------------|
+| `app/api/chat/route.ts` | Agentic loop stays the same -- just processes new fields naturally |
+| `lib/tools/handlers.ts` | `update_brief` handler is generic (deepSet) -- works with any field path |
+| `lib/tools/types.ts` | BriefState.briefData is `Record<string, unknown>` -- accepts any shape |
+| `hooks/useChat.ts` | SSE processing unchanged -- briefState updates are shape-agnostic |
+| `components/chat/` | Chat UI components unaffected |
 
 ## Anti-Patterns to Avoid
 
-### Anti-Pattern 1: Client-Side Prompt Assembly
+### Anti-Pattern 1: Streaming Research Results to Client
 
-**What:** Building the system prompt on the client and sending it with the messages.
-**Why bad:** Exposes prompt engineering to the client, allows manipulation, makes prompts larger in transit. The system prompt should be composed server-side in the API route.
-**Instead:** Client sends `{ messages, campaignTypes? }`. Server composes the full system prompt.
+**What:** Trying to show real-time research progress to the user.
+**Why bad:** The client has already approved and left. Even if kept connected, the UX of watching AI search the web for 1-2 minutes is poor. The PM is the consumer of research, not the client.
+**Instead:** Fire-and-forget via `after()`. Client gets immediate "Koeszoenoek" response.
 
-### Anti-Pattern 2: End-of-Conversation JSON Dump
+### Anti-Pattern 2: Storing briefData in a Database for Background Processing
 
-**What:** Keeping the current pattern where Claude outputs a single JSON blob with all data at the end of the conversation.
-**Why bad:** If the conversation is long, Claude may hallucinate or forget earlier answers. If the user refreshes, all progress is lost. If JSON parsing fails, everything is lost.
-**Instead:** Incremental `update_brief` tool calls capture data as it's confirmed. Data accumulates throughout the conversation, not just at the end.
+**What:** Saving the brief to Redis/Postgres, then reading it from the background job.
+**Why bad:** Over-engineering. The `after()` closure already has access to `briefData` from the request. No need for persistence when the data flows directly to the pipeline.
+**Instead:** Pass `briefData` directly into the `after()` callback. Zero persistence needed.
 
-### Anti-Pattern 3: Type Detection via Explicit User Selection
+### Anti-Pattern 3: Running Research in the Chat SSE Stream
 
-**What:** Showing a dropdown or buttons asking the user to pick their campaign type before the conversation starts.
-**Why bad:** Users often don't know the exact marketing taxonomy. "I want more customers" could be performance, brand, or both. The AI should infer type from context and confirm.
-**Instead:** Let the AI detect types from the first few conversational answers, then confirm with the user: "Ugy tunik, on [mediavasarlas] + [performance] tipusu kampanyt tervez. Stimmel?"
+**What:** Triggering research during the chat conversation (e.g., as a tool call).
+**Why bad:** The chat SSE stream has the same `maxDuration` limit. Research would eat into the user's chat time. Also, research is for the PM, not the client.
+**Instead:** Separate approve endpoint with its own `maxDuration` budget.
 
-### Anti-Pattern 4: Single God-Schema for All Types
+### Anti-Pattern 4: Creating xlsx from Scratch Instead of Templates
 
-**What:** One massive Zod schema with all possible fields, most optional.
-**Why bad:** No type safety -- you can never know which fields are expected for a given campaign type. Editors and reports can't determine what to show.
-**Instead:** Type-specific schemas composed from shared base + extensions (Pattern 3 above).
+**What:** Generating xlsx files programmatically cell by cell with styles.
+**Why bad:** ROI Works has specific branded templates with complex formatting, merged cells, formulas. Recreating this in code is fragile and hard to maintain.
+**Instead:** Read existing templates with ExcelJS, fill in data cells, write output. Template updates happen in Excel, not in code.
 
-### Anti-Pattern 5: Hardcoded Campaign Type List
+### Anti-Pattern 5: Putting Research Prompts in the Chat Prompt System
 
-**What:** Defining campaign types as string literals scattered across files.
-**Why bad:** Adding a new type requires changes in 6+ files (prompts, types, tools, editor, PDF, email).
-**Instead:** Single source of truth in `lib/campaign-types/` -- each type is a self-contained definition with its prompt module, field schema, and section renderers.
-
-## Server-Side State Management for Multi-Turn Tool Use
-
-**Key decision:** Where to store brief accumulation state between API calls?
-
-Since the app is stateless (no database, no user auth), and each `/api/chat` call is independent, the brief state must be reconstructed or passed with each request.
-
-**Recommended approach:** Client-side state with server-side validation.
-
-```
-Client (useBrief hook):
-  - Accumulates brief data from SSE events
-  - Sends current briefState with each message request
-  - Displays current progress in editor
-
-Server (/api/chat):
-  - Receives {messages, briefState, campaignTypes}
-  - Composes prompt from campaignTypes
-  - Includes briefState summary in system prompt so Claude knows what's already collected
-  - Handles tool calls, returns updates to client
-```
-
-This keeps the architecture stateless on the server while letting Claude see what data has already been gathered (via prompt context).
-
-**Confidence:** HIGH -- This follows the existing pattern (client sends full message history), extended to include brief state.
-
-## Build Order (Dependencies)
-
-The following sequence respects dependencies between components:
-
-```
-Phase 1: Foundation (no dependencies)
-  ├── Campaign type definitions (types, prompts, field schemas)
-  ├── Zod tool schemas (classify_campaign, update_brief)
-  └── New BriefData type system (base + extensions)
-
-Phase 2: Core Engine (depends on Phase 1)
-  ├── Prompt composition system (base + type modules)
-  ├── Chat API refactor (tool use loop, SSE dual-channel)
-  └── useBrief hook (replaces briefData in useChat)
-
-Phase 3: UI Adaptation (depends on Phase 2)
-  ├── Remove PDF upload flow, add direct chat entry
-  ├── Dynamic BriefEditor (section registry, conditional rendering)
-  └── Type detection UX (confirmation UI when types detected)
-
-Phase 4: Report System (depends on Phase 1 + 3)
-  ├── Section registry for PDF
-  ├── Section registry for email
-  └── PDF download functionality
-```
-
-**Phase ordering rationale:**
-1. **Phase 1 first** because types/schemas are the foundation everything imports
-2. **Phase 2 next** because prompt composition and tool use are the core behavioral change -- without these, the AI still asks generic questions
-3. **Phase 3 after** because UI changes are cosmetic until the engine produces type-specific data
-4. **Phase 4 last** because reports consume data from the new schema, which must be stable first
-
-**Parallel work opportunities:**
-- Phase 1 tasks are fully independent of each other
-- Within Phase 3, PDF upload removal is independent of editor refactor
-- Phase 4 PDF and email templates can be done in parallel
+**What:** Reusing `lib/prompts/` for research prompts.
+**Why bad:** Chat prompts are conversation-driven (tegező, incremental questions). Research prompts are analytical (structured output, comprehensive analysis). Different goals, different prompt engineering.
+**Instead:** Separate `lib/research/prompts.ts` with dedicated research system prompts.
 
 ## Scalability Considerations
 
-| Concern | Current (1 type) | Target (4 types) | Future (10+ types) |
-|---------|-------------------|-------------------|---------------------|
-| Prompt length | ~800 tokens | ~1500 tokens (base + 1-2 type modules) | Risk: >4K tokens if too many modules loaded. Mitigation: only load active type modules |
-| Type definitions | 1 file | 4 files in `campaign-types/` | Registry pattern scales linearly. Each type is self-contained |
-| Tool schemas | None | 2 tools (classify + update) | Could add type-specific tools, but keep simple -- `update_brief` with section param handles any type |
-| Report sections | 8 hardcoded | ~15-20 (shared + type-specific) | Section registry scales linearly. New type = add entries to registry |
-| Token cost | ~2K in/out per turn | ~3K in/out (larger prompt + tools overhead) | Monitor: tool use adds ~350 token overhead. Brief state context grows with conversation |
+| Concern | Current (v1.0) | v1.1 Target | Future Risk |
+|---------|----------------|-------------|-------------|
+| Background processing | None | `after()` within maxDuration | If research needs > 5 min, need external queue (Inngest) |
+| Xlsx template maintenance | N/A | 5 templates in docs/ROI_Mediaplan/ | Template changes require cell-mapping updates |
+| API cost per brief | ~$0.02 (chat only) | ~$0.20-0.30 (chat + research + search) | 10x increase -- monitor spend |
+| Web search relevance | N/A | Hungarian market data quality unknown | May need domain filtering (allowed_domains) |
+| Error handling | Chat errors shown to user | Background errors invisible to user | Need PM notification on failure |
+| Concurrent briefs | Stateless, unlimited | Background research is CPU/time-bound on Vercel | Heavy load could hit Vercel concurrency limits |
 
-## File Structure (Proposed)
+## Build Order (Recommended)
+
+Dependencies dictate this sequence:
 
 ```
-lib/
-  prompts/
-    base.ts              -- shared prompt (style, rules, flow)
-    compose.ts           -- composeSystemPrompt(types)
-    types/
-      media-buying.ts    -- media buying question module
-      performance.ts     -- PPC question module
-      brand.ts           -- brand awareness module
-      social.ts          -- social media module
-  campaign-types/
-    index.ts             -- CampaignType enum, registry
-    media-buying.ts      -- fields, sections, validation
-    performance.ts
-    brand.ts
-    social.ts
-  tools/
-    classify-campaign.ts -- tool definition + Zod schema
-    update-brief.ts      -- tool definition + Zod schema
-    index.ts             -- export all tools
-  report/
-    section-registry.ts  -- section renderer registry
-    pdf-sections/        -- individual PDF section components
-    email-sections/      -- individual email section templates
-types/
-  brief.ts               -- BriefBase, type-specific fields, BriefData
-  campaign.ts            -- CampaignType, type guards
-hooks/
-  useBrief.ts            -- brief state accumulation + management
-  useChat.ts             -- refactored: no more JSON extraction, uses tools
+Phase 1: Extended Data Collection
+  - Extend schemas (brief-base.ts, type-specific)
+  - Extend prompts (more business questions)
+  - Extend brief-sections.ts (new field defs)
+  - Update PDF/email templates (new fields)
+  NO NEW PATTERNS -- just more fields in existing architecture
+
+Phase 2: Client Approval Flow
+  - Modify BriefEditor (remove email req, add approve)
+  - Create /api/approve-brief (stub -- returns success, no background yet)
+  - Update success page UX
+  DEPENDS ON: Phase 1 (schema must be final)
+
+Phase 3: AI Background Research
+  - Create lib/research/ module
+  - Implement Claude + web_search pipeline
+  - Define ResearchResults types
+  - Wire into /api/approve-brief via after()
+  DEPENDS ON: Phase 2 (approve endpoint exists)
+
+Phase 4: Xlsx Generation + PM Email
+  - Add ExcelJS dependency
+  - Analyze xlsx templates, create cell mappings
+  - Implement template filling
+  - Create PM email sender
+  - Wire into research pipeline completion
+  DEPENDS ON: Phase 3 (research results feed xlsx)
 ```
+
+**Phase ordering rationale:**
+- Phase 1 is the lowest risk -- extends existing patterns, no new architecture
+- Phase 2 must come before Phase 3 because the approve endpoint is the trigger for background research
+- Phase 3 before Phase 4 because xlsx generation consumes research results
+- Each phase delivers independently usable value: P1 = better data, P2 = simpler client UX, P3 = AI insights, P4 = automated PM deliverables
 
 ## Sources
 
-- [Anthropic Structured Outputs Documentation](https://platform.claude.com/docs/en/build-with-claude/structured-outputs) - HIGH confidence: official GA docs, Zod integration, streaming compatibility
-- [Anthropic Tool Use Documentation](https://platform.claude.com/docs/en/agents-and-tools/tool-use/overview) - HIGH confidence: official docs, multi-turn patterns, pricing
-- [PromptLayer: Prompt Routers and Modular Prompt Architecture](https://blog.promptlayer.com/prompt-routers-and-modular-prompt-architecture-8691d7a57aee/) - MEDIUM confidence: well-established pattern, multiple sources agree
-- [TypeScript Discriminated Unions for React Props](https://oneuptime.com/blog/post/2026-01-15-typescript-discriminated-unions-react-props/view) - MEDIUM confidence: standard TS pattern
-- [Zod Discriminated Union Discussion](https://github.com/colinhacks/zod/discussions/4735) - MEDIUM confidence: GitHub issue confirms Zod approach for dynamic schemas
-- [@react-pdf/renderer Conditional Rendering Issue](https://github.com/diegomura/react-pdf/issues/3164) - MEDIUM confidence: known issue to watch for
+- [Next.js `after()` API Documentation](https://nextjs.org/docs/app/api-reference/functions/after) -- HIGH confidence: official docs v16.1.6, stable since v15.1
+- [Vercel Functions Duration Configuration](https://vercel.com/docs/functions/configuring-functions/duration) -- HIGH confidence: official docs, Fluid Compute defaults 300s/max 800s on Pro
+- [Anthropic Web Search Tool Documentation](https://platform.claude.com/docs/en/agents-and-tools/tool-use/web-search-tool) -- HIGH confidence: official API docs, $10/1K searches, server-side execution
+- [Vercel `waitUntil()` Changelog](https://vercel.com/changelog/waituntil-is-now-available-for-vercel-functions) -- HIGH confidence: official changelog
+- [ExcelJS GitHub](https://github.com/exceljs/exceljs) -- HIGH confidence: 4M+ weekly npm downloads, read/modify/write xlsx with formatting preservation
+- [SendGrid Node.js Attachments](https://github.com/sendgrid/sendgrid-nodejs/blob/main/docs/use-cases/attachments.md) -- HIGH confidence: official docs, base64 attachment pattern
+- [Anthropic Web Search API Blog](https://claude.com/blog/web-search-api) -- MEDIUM confidence: official blog, pricing and model support
+- [Inngest: Next.js Timeouts](https://www.inngest.com/blog/how-to-solve-nextjs-timeouts) -- MEDIUM confidence: alternative approach if after() proves insufficient
 
 ---
 
-*Architecture research: 2026-02-10*
+*Architecture research: 2026-02-12*
+*Focus: v1.1 integration patterns for existing Next.js brief assistant*

@@ -1,320 +1,231 @@
 # Technology Stack
 
-**Project:** ROI Brief - Adaptive AI Questioning System
-**Researched:** 2026-02-10
-**Scope:** Incremental additions to existing stack for campaign-type-specific adaptive questioning
+**Project:** ROI Brief v2 - Extended Data Collection, AI Research Pipeline, XLSX Generation
+**Researched:** 2026-02-12
+**Scope:** Stack kiegeszitesek a meglevo Next.js apphoz: xlsx generalas, AI kutatas, email csatolmanyok
 
-## Existing Stack (Not Re-Researched)
+## Meglevo Stack (NEM kutatott ujra)
 
 | Technology | Version | Purpose |
 |------------|---------|---------|
 | Next.js | 16.1.1 | App framework |
 | React | 19.2.3 | UI |
 | TypeScript | ^5 | Type safety |
-| @anthropic-ai/sdk | ^0.71.2 | Claude API direct access |
-| @react-pdf/renderer | ^4.3.2 | PDF generation |
-| @sendgrid/mail | ^8.1.6 | Email delivery |
+| @anthropic-ai/sdk | ^0.74.0 | Claude API |
+| @react-pdf/renderer | ^4.3.2 | PDF generalas |
+| @sendgrid/mail | ^8.1.6 | Email kuldes |
 | Tailwind CSS | v4 | Styling |
-| ai (Vercel AI SDK) | ^6.0.31 | Listed but NOT used in codebase |
+| Zod | ^4.3.6 | Schema validacio |
 
-## Recommended Additions
+## Ajanlott Kiegeszitesek
 
-### 1. Zod - Schema Validation & Structured Output Bridge
+### 1. ExcelJS - XLSX Generalas Sablonbol
 
 | Technology | Version | Purpose | Why |
 |------------|---------|---------|-----|
-| zod | ^4.3.6 | Schema validation, dynamic BriefData types, Anthropic structured output integration | Required by `@anthropic-ai/sdk` `zodOutputFormat` helper. Also provides discriminated unions for campaign-type-specific schemas. Zod v4 is 14x faster than v3 at string parsing. |
+| exceljs | ^4.4.0 | XLSX fajlok generalasa meglevo sablonokbol (Agency Brief + Mediaplan) | A legjobb Node.js konyvtar meglevo xlsx fajlok betoltesere, cellak modositasara es bufferbe irasra. Megorizti a formatazast, stilusokat, temakat. Tamogatja a `workbook.xlsx.load(buffer)` es `workbook.xlsx.writeBuffer()` muveleteket -- teljesen buffer-alapu, nincs fajlrendszer-fuggoseg, igy Vercel serverless-ben problemamentesen mukodik. |
 
-**Confidence:** HIGH - Verified via [Anthropic structured outputs docs](https://platform.claude.com/docs/en/build-with-claude/structured-outputs) and [Zod v4 release notes](https://zod.dev/v4).
+**Confidence:** HIGH - Verified via [npm registry](https://www.npmjs.com/package/exceljs) (v4.4.0), [GitHub repo](https://github.com/exceljs/exceljs), es tobb osszehasonlito forras.
 
-**Why Zod specifically:**
-- The Anthropic TypeScript SDK ships a `zodOutputFormat` helper at `@anthropic-ai/sdk/helpers/zod` that converts Zod schemas directly into the `output_config.format` parameter. This is the officially supported path for structured outputs in TypeScript.
-- Zod v4's `z.discriminatedUnion()` maps perfectly to campaign-type-specific brief schemas (e.g., discriminate on `campaign_type` field to get media-buying-specific or performance-specific fields).
-- Runtime validation of Claude's JSON output provides a safety net beyond constrained decoding.
+**Miert ExcelJS es NEM mas:**
 
-**Installation:**
-```bash
-npm install zod
-```
+| Alternativa | Miert nem |
+|-------------|-----------|
+| SheetJS (xlsx) | A Community Edition nem tamogatja a stilusok megorzeset irasnalÍ - csak adat-szintu muveletekre jo. A Pro verzio fizetős. Biztonsagi sebezhetosegek is felmerultek. |
+| xlsx-populate | Jo template-kezeleshez, DE 2020 ota nincs frissitve (v1.21.0). Karbantartasi kockazat. |
+| xlsx-template | Placeholder-alapu (`{{field}}`) megkozelites -- kenyelmesebb egyszeru behelyettesitesekhez, de korlátozott: nem tamogat feltételes cellákat, szinezest, komplex logikát. A Mediaplan sheet komplex cellalogikát igényel. |
 
-### 2. @anthropic-ai/sdk Upgrade
-
-| Technology | Target Version | Purpose | Why |
-|------------|----------------|---------|-----|
-| @anthropic-ai/sdk | ^0.74.0 | Structured outputs GA support, `output_config.format` parameter | Current ^0.71.2 may not include GA structured output support. The `output_config.format` API (replacing deprecated `output_format`) and `zodOutputFormat` helper require recent SDK versions. |
-
-**Confidence:** HIGH - Verified via [npm registry](https://www.npmjs.com/package/@anthropic-ai/sdk) (0.74.0 published 2026-02-08) and [Anthropic docs](https://platform.claude.com/docs/en/build-with-claude/structured-outputs).
-
-**Installation:**
-```bash
-npm install @anthropic-ai/sdk@latest
-```
-
-### 3. Remove Unused `ai` Package
-
-| Action | Package | Why |
-|--------|---------|-----|
-| Remove | `ai` (^6.0.31) | Listed in package.json but zero imports in codebase. The project uses `@anthropic-ai/sdk` directly with custom SSE streaming. Removing reduces bundle size and avoids confusion. |
-
-**Confidence:** HIGH - Verified by grepping all `.ts` and `.tsx` files for `ai` imports: zero matches found.
-
-```bash
-npm uninstall ai
-```
-
-## Architecture Decisions
-
-### Approach 1: Prompt Engineering + Structured Outputs (RECOMMENDED)
-
-**Use the Anthropic SDK directly with structured outputs for the adaptive questioning flow.** Do NOT introduce a framework layer (Vercel AI SDK, LangChain, etc.) between the app and Claude.
-
-**Why this approach:**
-
-1. **Prompt-driven adaptivity is simpler than code-driven logic.** Campaign type detection, question depth adaptation, and skip logic are best expressed as natural language instructions in the system prompt, not as branching TypeScript code. Claude excels at following complex multi-step instructions.
-
-2. **Structured outputs replace the current `BRIEF_JSON_START/END` tag-parsing hack.** The current system relies on regex-parsing JSON from free-text responses (`content.match(/BRIEF_JSON_START\s*([\s\S]*?)\s*BRIEF_JSON_END/)`). This is fragile. With `output_config.format` + Zod schema, Claude's response is guaranteed valid JSON at the token level -- no parsing failures, no retries.
-
-3. **The existing streaming architecture works.** The project's custom SSE streaming (`ReadableStream` + `text/event-stream`) is perfectly functional. Structured outputs are compatible with streaming -- the JSON content streams as `text_delta` events and the final result is guaranteed valid.
-
-4. **No new runtime dependency.** Only Zod is added (zero-dependency, 13KB gzipped for zod-mini). The Anthropic SDK already exists.
-
-**Confidence:** HIGH
-
-### Approach 2: Dual-Call Pattern for Chat + Extraction
-
-The adaptive questioning system needs TWO different interaction patterns:
-
-**Pattern A - Conversational streaming (chat turns):**
-Keep current approach. System prompt drives the conversation. Claude streams natural language responses to the user. No structured output needed here -- the response IS the conversation.
+**Sablonbol generalas mintaja:**
 
 ```typescript
-// Chat turn: stream natural language
-const stream = await anthropic.messages.create({
-  model: "claude-sonnet-4-20250514",
-  system: ADAPTIVE_SYSTEM_PROMPT,  // Contains campaign-type logic
-  messages: conversationHistory,
-  stream: true,
-  // NO output_config -- this is free-form conversation
-});
-```
+import ExcelJS from "exceljs";
 
-**Pattern B - Structured extraction (brief generation):**
-When the conversation is complete, make a SEPARATE non-streaming call with `output_config` to extract the structured brief data from the conversation.
+async function generateXlsx(templateBuffer: Buffer, data: BriefData): Promise<Buffer> {
+  const workbook = new ExcelJS.Workbook();
+  await workbook.xlsx.load(templateBuffer);
 
-```typescript
-// Extraction: get structured brief data
-import { z } from "zod";
-import { zodOutputFormat } from "@anthropic-ai/sdk/helpers/zod";
+  const sheet = workbook.getWorksheet("Brief");
+  sheet.getCell("B3").value = data.company_name;
+  sheet.getCell("B5").value = data.campaign_goal;
+  // ... tovabbi cellak kitoltese
 
-const response = await anthropic.messages.create({
-  model: "claude-sonnet-4-20250514",
-  system: EXTRACTION_SYSTEM_PROMPT,
-  messages: [...conversationHistory, {
-    role: "user",
-    content: "Extract the complete brief data from our conversation."
-  }],
-  output_config: { format: zodOutputFormat(BriefDataSchema) },
-  // NOT streamed -- we need the complete JSON
-});
-const briefData = JSON.parse(response.content[0].text);
-```
-
-**Why two calls instead of one:**
-- Streaming + structured output ARE compatible, but the UX goal conflicts: during chat, users need natural Hungarian-language responses with explanations. At the end, the system needs machine-parseable JSON. Mixing these in one response (the current `BRIEF_JSON_START` approach) is fragile and wastes tokens.
-- The extraction call is cheap (single call, ~1K output tokens) and guaranteed correct.
-
-**Confidence:** HIGH
-
-### Approach 3: Dynamic BriefData Schema with Zod Discriminated Unions
-
-The current `BriefData` type is a flat, fixed structure. For campaign-type-specific data, use Zod discriminated unions:
-
-```typescript
-import { z } from "zod";
-
-// Shared base fields (all campaign types)
-const BaseBriefSchema = z.object({
-  company: CompanySchema,
-  campaign: z.object({
-    name: z.string(),
-    type: z.enum(["media_buying", "performance_ppc", "brand_awareness", "social_media"]),
-    goal: z.string(),
-    message: z.string(),
-  }),
-  target_audience: TargetAudienceSchema,
-  channels: z.array(z.string()),
-  timeline: TimelineSchema,
-  budget: BudgetSchema,
-  competitors: z.array(z.string()),
-  notes: z.string(),
-});
-
-// Type-specific extensions
-const MediaBuyingBriefSchema = BaseBriefSchema.extend({
-  campaign: BaseBriefSchema.shape.campaign.extend({
-    type: z.literal("media_buying"),
-  }),
-  media_specific: z.object({
-    grp_target: z.string(),
-    reach_target: z.string(),
-    frequency_cap: z.string(),
-    media_mix: z.array(z.string()),
-    daypart_preferences: z.string(),
-  }),
-});
-
-const PerformanceBriefSchema = BaseBriefSchema.extend({
-  campaign: BaseBriefSchema.shape.campaign.extend({
-    type: z.literal("performance_ppc"),
-  }),
-  performance_specific: z.object({
-    target_roas: z.string(),
-    target_cpa: z.string(),
-    conversion_events: z.array(z.string()),
-    attribution_model: z.string(),
-    landing_pages: z.array(z.string()),
-  }),
-});
-
-// Union schema for structured output
-const AdaptiveBriefSchema = z.discriminatedUnion("campaign.type", [
-  MediaBuyingBriefSchema,
-  PerformanceBriefSchema,
-  BrandAwarenessBriefSchema,
-  SocialMediaBriefSchema,
-]);
-```
-
-**Important limitation:** Zod's `z.discriminatedUnion` does NOT support nested discriminator keys like `"campaign.type"`. The discriminator must be a top-level key. Workaround: either flatten to a top-level `campaign_type` field, or use `z.union()` with manual refinement. Since the Anthropic structured output grammar compilation handles `anyOf` (which is what `z.union` compiles to), this works fine.
-
-**Confidence:** MEDIUM - Zod discriminated union on nested keys needs validation during implementation. The `z.union()` fallback is verified to work with Anthropic structured outputs.
-
-### Approach 4: Campaign-Type Knowledge as Prompt Sections
-
-Campaign-type-specific domain knowledge (what questions to ask for media buying vs. performance) should live in **TypeScript constant files**, NOT in a database or config system. Rationale:
-
-- There are 4 campaign types. This is not a dynamic dataset.
-- The knowledge changes when marketing industry practices change, not at runtime.
-- TypeScript constants are type-checked, version-controlled, and tree-shaken.
-
-```
-lib/
-  prompts/
-    system.ts          # Core adaptive system prompt
-    campaign-types/
-      media-buying.ts  # GRP, reach, frequency questions + context
-      performance.ts   # ROAS, CPA, conversion questions + context
-      brand.ts         # Awareness, recall, brand lift questions + context
-      social.ts        # Engagement, content, community questions + context
-    extraction.ts      # Brief extraction prompt
-```
-
-The system prompt dynamically assembles itself from these modules based on detected/selected campaign types. For multi-type campaigns, ALL relevant question sets are included.
-
-**Confidence:** HIGH
-
-## What NOT to Add
-
-| Technology | Why Not |
-|------------|---------|
-| LangChain / LangGraph | Massive dependency for what is a single-model, single-prompt system. The "chain" is just one system prompt + conversation history. No multi-model orchestration needed. |
-| Vercel AI SDK (`ai`) | Already unused in the project. The direct Anthropic SDK gives full control over streaming, structured outputs, and prompt construction. The AI SDK's `streamText` abstraction adds nothing here -- the custom SSE implementation is already working and simpler to debug. |
-| Vector database (Pinecone, etc.) | Campaign-type knowledge is 4 sets of ~20 questions each. This fits in a prompt. No RAG needed. |
-| State machine library (XState) | The conversation flow is driven by Claude's intelligence, not by explicit state transitions. Adding a state machine creates a rigid flow that defeats the purpose of adaptive questioning. |
-| Form library (react-hook-form) | The BriefEditor is a simple review/edit screen, not a complex form with validation. The current `updateField` pattern with controlled inputs is adequate. If the editor grows significantly, reconsider. |
-| Database (Prisma, Supabase) | Brief data is generated, emailed, and forgotten. No persistence needed. If analytics/history becomes a requirement, revisit. |
-
-## Recommended Stack Summary
-
-### Install
-
-```bash
-npm install zod @anthropic-ai/sdk@latest
-npm uninstall ai
-```
-
-### Final Stack for Adaptive Questioning
-
-| Category | Technology | Version | Purpose |
-|----------|-----------|---------|---------|
-| **Schema validation** | zod | ^4.3.6 | BriefData schemas, discriminated unions, Anthropic SDK integration |
-| **AI API** | @anthropic-ai/sdk | ^0.74.0 | Structured outputs GA, `output_config.format`, `zodOutputFormat` helper |
-| **Model** | claude-sonnet-4 | latest | Chat turns (streaming) and brief extraction (structured output) |
-| **PDF** | @react-pdf/renderer | ^4.3.2 (existing) | Dynamic sections via prop-driven conditional rendering |
-| **Types** | TypeScript + Zod `z.infer<>` | - | Single source of truth: Zod schemas generate both TypeScript types AND JSON schemas for structured output |
-
-### Key Pattern: Zod as Single Source of Truth
-
-```
-Zod Schema
-    |
-    +---> z.infer<typeof Schema>  --> TypeScript types (compile-time)
-    |
-    +---> zodOutputFormat(Schema) --> Anthropic structured output (runtime)
-    |
-    +---> Schema.parse(data)      --> Runtime validation (safety net)
-```
-
-This eliminates the current duplication between `types/chat.ts` (manual TypeScript interface) and the implicit JSON structure in the system prompt. Define once in Zod, derive everything.
-
-## PDF Generation for Dynamic Layouts
-
-The existing `@react-pdf/renderer` v4.3.2 supports dynamic sections through standard React conditional rendering via props. No additional library needed.
-
-**Pattern for campaign-type-specific PDF sections:**
-
-```typescript
-// Pass campaign type and type-specific data as props
-function BriefPDF({ data }: { data: AdaptiveBriefData }) {
-  return (
-    <Document>
-      <Page>
-        {/* Shared sections -- always rendered */}
-        <CompanySection data={data.company} />
-        <CampaignSection data={data.campaign} />
-        <TargetAudienceSection data={data.target_audience} />
-
-        {/* Type-specific sections -- conditionally rendered */}
-        {data.campaign.type === "media_buying" && data.media_specific && (
-          <MediaBuyingSection data={data.media_specific} />
-        )}
-        {data.campaign.type === "performance_ppc" && data.performance_specific && (
-          <PerformanceSection data={data.performance_specific} />
-        )}
-
-        {/* Shared sections */}
-        <BudgetSection data={data.budget} />
-        <TimelineSection data={data.timeline} />
-      </Page>
-    </Document>
-  );
+  return Buffer.from(await workbook.xlsx.writeBuffer());
 }
 ```
 
-**Known issue:** @react-pdf/renderer has a bug where removing/adding elements after initial render can crash ([issue #3164](https://github.com/diegomura/react-pdf/issues/3164)). This does NOT affect server-side rendering (which is how the project uses it in the `send-brief` API route via `renderToBuffer`). The PDF is generated once from final data, not dynamically toggled.
+**Merete es Vercel kompatibilitas:**
+- Csomag merete: ~1.08 MB (unzipped). A Vercel serverless limit 250 MB unzipped -- bovem belfer.
+- FONTOS: Node.js runtime-ot hasznal (nem Edge Runtime). A jelenlegi app route-jai mar Node.js runtime-on futnak (`send-brief` PDF generalaassal), tehat nincs valtozas.
+- A `load(buffer)` / `writeBuffer()` metodusok nem hasznalnak `fs`-t, teljesen memoria-alapuak.
 
-**Confidence:** HIGH
+**Sablon tarolasa:**
+A `.xlsx` sablonfajlok a `public/templates/` vagy `lib/templates/` mappaban tarolhatok. Vercel serverless-ben `fs.readFileSync` hasznalhato a sablon betoltesehez build-time-ban, VAGY a sablon importalhato mint asset. Az egyszerubb megoldas: `public/templates/agency-brief.xlsx` es `public/templates/mediaplan.xlsx` -- a serverless function fetch-eli oket.
 
-## Streaming Architecture Decision
+**Telepites:**
+```bash
+npm install exceljs
+```
 
-**Keep the current custom SSE streaming implementation.** Do NOT migrate to Vercel AI SDK's `useChat` or `streamText`.
+---
 
-**Rationale:**
-1. The current implementation works: custom `ReadableStream` -> SSE -> client-side `EventSource`-style parsing.
-2. The dual-call pattern (streaming chat + non-streaming extraction) does not map cleanly to `useChat`, which assumes a single call-per-turn.
-3. The extraction call (Pattern B above) needs to happen client-side AFTER the chat is complete, as a separate fetch. This is simpler with the existing `useChat` hook than with the AI SDK's opinionated abstractions.
-4. The AI SDK adds 100KB+ to the bundle for an abstraction we don't need.
+### 2. Anthropic Web Search Tool - AI Kutatas Pipeline
 
-**Confidence:** HIGH
+| Technology | Version | Purpose | Why |
+|------------|---------|---------|-----|
+| Anthropic Web Search Tool | `web_search_20250305` | AI-alapu hatterkulatas: versenytars-elemzes, celzasi javaslatok, KPI benchmarkok, csatorna-mix | Beepitett Anthropic API tool -- nincs kulon konyvtar. A `@anthropic-ai/sdk` ^0.74.0 mar tamogatja. Claude maga donti el mikor keressen, automatikus citalassal. $10/1000 kereses + token koltseg. |
 
-## Sources
+**Confidence:** HIGH - Verified via [Anthropic Web Search Tool documentation](https://platform.claude.com/docs/en/agents-and-tools/tool-use/web-search-tool) (teljes API doc elolvasva).
 
-- [Anthropic Structured Outputs Documentation (GA)](https://platform.claude.com/docs/en/build-with-claude/structured-outputs)
-- [Anthropic SDK TypeScript (npm)](https://www.npmjs.com/package/@anthropic-ai/sdk) - v0.74.0
-- [Zod v4 Release Notes](https://zod.dev/v4) - v4.3.6
-- [Zod Discriminated Unions](https://zod.dev/api)
-- [Claude Prompt Engineering Best Practices](https://platform.claude.com/docs/en/build-with-claude/prompt-engineering/claude-prompting-best-practices)
-- [@react-pdf/renderer Advanced Docs](https://react-pdf.org/advanced)
-- [@react-pdf/renderer Issue #3164 - Conditional Rendering Bug](https://github.com/diegomura/react-pdf/issues/3164)
-- [AI SDK 6 Anthropic Provider](https://ai-sdk.dev/providers/ai-sdk-providers/anthropic)
-- [Anthropic Streaming Docs](https://platform.claude.com/docs/en/build-with-claude/streaming)
+**NINCS uj fugosseg.** A web search egy server-side tool a meglevo `@anthropic-ai/sdk`-n belul. A konfiguracio:
+
+```typescript
+const response = await anthropic.messages.create({
+  model: "claude-sonnet-4-20250514",
+  max_tokens: 4096,
+  messages: researchMessages,
+  tools: [{
+    type: "web_search_20250305",
+    name: "web_search",
+    max_uses: 10,
+    user_location: {
+      type: "approximate",
+      country: "HU",
+      city: "Budapest",
+      timezone: "Europe/Budapest",
+    },
+  }],
+});
+```
+
+**Tamogatott modellek:**
+- Claude Opus 4.6, Opus 4.5, Opus 4.1, Opus 4
+- Claude Sonnet 4.5, Sonnet 4
+- Claude Haiku 4.5
+
+**Fontos API reszletek:**
+- **Tool type:** `"web_search_20250305"` (fix string, nem verziofuggo az SDK-tol)
+- **`max_uses`:** Korlatozza a keresek szamat egy keresen belul. A kutatas pipeline-hoz 10-15 javasolt.
+- **`allowed_domains` / `blocked_domains`:** Opcionalis domain-szures. Hasznos ha megbizhato marketing-forrasokra akarunk szukiteni.
+- **`user_location`:** Lokalizalt talalatok Magyarorszagra -- fontos a magyar piaci adatokhoz.
+- **Valasz:** `server_tool_use` block-ok a streamben. A `web_search_tool_result` tartalmazza az `encrypted_content`-et amit multi-turn-ben vissza kell kuldeni.
+- **`pause_turn` stop reason:** Hosszu kutatas eseten az API szuneteltetheti a turn-t. A valaszt valtozatlanul vissza kell kuldeni a kovetkezo keresben.
+- **Streaming:** Tamogatott. A kereses kozben szunet van a streamben amig a talalatok megjonnek.
+- **Prompt caching:** Mukodik web search-csel egyutt. `cache_control` breakpoint a `web_search_tool_result` blokk utan.
+- **Arazas:** $10 / 1000 kereses + standard token koltseg a talalatok feldolgozasaert (input tokenek).
+
+**Integracio a meglevo agentic loop-pal:**
+A jelenlegi `chat/route.ts` mar kezeli a tool use loop-ot (stream -> tool detection -> server-side execution -> continuation). A web search tool AZONBAN `server_tool_use` tipusu (nem sima `tool_use`), mert az API maga hajtja vegre. Ez azt jelenti:
+1. NEM kell kliens-oldali tool execution
+2. A `server_tool_use` es `web_search_tool_result` blokkok automatikusan megjelennek a streamben
+3. A loop logika MARAD, de a web search tool-t NEM kell kulon kezelni -- az API maga valaszol ra
+
+**Kulonvalasztott kutatas endpoint:**
+A web search NEM a chat endpoint-ba kerul. Kulon `/api/research` route, ami:
+- Megkapja a veglegesitett brief adatokat
+- Nem streamed a kliensnek (vagy korlátozott progress-t streamel)
+- Egyetlen research prompt + web search tool = teljes kutatas
+- Visszaadja a strukturalt kutatas eredmenyt
+
+---
+
+### 3. SendGrid Email Csatolmanyokkal - Meglevo Pattern Bovitese
+
+| Technology | Version | Purpose | Why |
+|------------|---------|---------|-----|
+| @sendgrid/mail | ^8.1.6 (meglevo) | XLSX fajlok csatolasa az emailhez | Mar hasznalatban a projektben PDF csatolashoz. UGYANAZ a pattern, csak mas MIME type es tartalom. Nulla uj fugosseg. |
+
+**Confidence:** HIGH - Verified via [SendGrid Node.js attachment docs](https://github.com/sendgrid/sendgrid-nodejs/blob/main/docs/use-cases/attachments.md) es a meglevo `send-brief/route.tsx` implementacio.
+
+**A meglevo pattern mar tamogatja:**
+A jelenlegi `send-brief/route.tsx` PONT igy csatol PDF-et:
+
+```typescript
+attachments: [{
+  content: pdfBase64,           // Buffer -> base64
+  filename,                     // "brief-company.pdf"
+  type: "application/pdf",      // MIME type
+  disposition: "attachment" as const,
+}],
+```
+
+Az XLSX csatolashoz SEMMI ujat nem kell telepiteni. Csak kiegeszitjuk:
+
+```typescript
+attachments: [
+  {
+    content: pdfBase64,
+    filename: `brief-${slug}.pdf`,
+    type: "application/pdf",
+    disposition: "attachment" as const,
+  },
+  {
+    content: xlsxBase64,  // ExcelJS writeBuffer() -> Buffer.toString("base64")
+    filename: `agency-brief-${slug}.xlsx`,
+    type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    disposition: "attachment" as const,
+  },
+  {
+    content: mediaplanBase64,
+    filename: `mediaplan-${slug}.xlsx`,
+    type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    disposition: "attachment" as const,
+  },
+],
+```
+
+**MIME type:** `application/vnd.openxmlformats-officedocument.spreadsheetml.sheet` az `.xlsx` fajlokhoz.
+
+**Meretkorlat:** SendGrid max 30 MB csatolmany-meret. Egy kitoltott Excel sablon tipikusan 50-200 KB -- nem jelent problemat.
+
+---
+
+## Amit NEM Kell Hozzaadni
+
+| Technology | Miert nem |
+|------------|-----------|
+| Puppeteer / Playwright | Nehanyan server-side web scraping-hez hasznaljak kutatasi pipeline-okban. FELESLEGES: az Anthropic Web Search Tool ezt megoldja API szinten, nincs szukseg sajat scraper-re. Raadasul Puppeteer ~400 MB + Chromium -- Vercel-en nem fer el. |
+| SerpAPI / Google Custom Search | Kulon kereso API-k. FELESLEGES: az Anthropic Web Search Tool beepitett es jobb, mert Claude maga dolgozza fel az eredmenyeket context-ben. |
+| LangChain / LangGraph | Tulzas egy egyszeru research pipeline-hoz. Egyetlen Claude hivas web search tool-lal megoldja. |
+| xlsx-populate | Utolso release 2020. Karbantartatlan. ExcelJS aktivan karbantartott es jobb API-val rendelkezik. |
+| xlsx / SheetJS Community | Nem oriez meg stilusokat. Biztonsagi aggalyok. |
+| Komplex queue rendszer (BullMQ, stb.) | A kutatas pipeline egyetlen Claude hivas, nem kell job queue. Ha timeout lenne (Vercel 60s limit), egyszerubb megoldas: a kutataast tobb kisebb hivasra bontani. |
+| Database (Prisma, stb.) | A kutatas eredmenyet az xlsx-be es emailbe olvasztjuk. Nincs szukseg perzisztenciara. |
+
+## Osszefoglalo
+
+### Telepites
+
+```bash
+# Egyetlen uj fugosseg
+npm install exceljs
+```
+
+### Teljes v2 Stack
+
+| Kategoria | Technology | Version | Uj? | Purpose |
+|-----------|-----------|---------|-----|---------|
+| **XLSX generalas** | exceljs | ^4.4.0 | UJ | Sablon betoltese, cellak kitoltese, buffer generalas |
+| **AI kutatas** | Anthropic Web Search Tool | `web_search_20250305` | UJ (config) | Hatterkulatas: versenytarsak, celzas, KPI-k |
+| **Email csatolmany** | @sendgrid/mail | ^8.1.6 | MEGLEVO | XLSX fajlok csatolasa base64 encoding-gal |
+| **AI API** | @anthropic-ai/sdk | ^0.74.0 | MEGLEVO | Web search tool tamogatas mar benne van |
+| **Schema** | zod | ^4.3.6 | MEGLEVO | Kutatas eredmeny validalasa |
+| **Framework** | Next.js | 16.1.1 | MEGLEVO | API routes a kutatas es xlsx endpoint-okhoz |
+
+### Fo Elv: Egyetlen Uj Fugosseg
+
+A harom uj kepesseg (xlsx, AI kutatas, email csatolmany) kozul **csak az xlsx generalas igenyel uj npm package-et** (exceljs). A tobbi a meglevo stack kibovitesevel valosithato meg:
+- AI kutatas = meglevo `@anthropic-ai/sdk` + web search tool konfiguracio
+- Email csatolmany = meglevo `@sendgrid/mail` + XLSX MIME type
+
+Ez kozvetlen kovetkezmenye a KISS elvnek: ne adj hozza amit nem kell.
+
+## Forrasok
+
+- [ExcelJS npm](https://www.npmjs.com/package/exceljs) - v4.4.0
+- [ExcelJS GitHub](https://github.com/exceljs/exceljs) - Template loading, buffer I/O
+- [Anthropic Web Search Tool docs](https://platform.claude.com/docs/en/agents-and-tools/tool-use/web-search-tool) - Teljes API referencia
+- [Anthropic Web Search API announcement](https://www.anthropic.com/news/web-search-api) - Arazas, tamogatott modellek
+- [SendGrid Node.js attachments](https://github.com/sendgrid/sendgrid-nodejs/blob/main/docs/use-cases/attachments.md) - Csatolmany pattern
+- [Vercel Serverless Function limits](https://vercel.com/docs/functions/limitations) - 250 MB unzipped limit, 60s timeout
+- [npm-compare: ExcelJS vs xlsx vs xlsx-populate](https://npm-compare.com/excel4node,exceljs,node-xlsx,xlsx,xlsx-populate) - Konyvtar osszehasonlitas
+- [ExcelJS Bundlephobia](https://bundlephobia.com/package/exceljs) - ~1.08 MB csomag meret
