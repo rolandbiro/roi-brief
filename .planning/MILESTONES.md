@@ -20,3 +20,24 @@
 
 ---
 
+
+## v1.1 Enhanced Brief + AI Research (Shipped: 2026-02-12)
+
+**Phases completed:** 3 phases (4-6), 7 plans
+**Timeline:** 1 nap (2026-02-12)
+**LOC:** 4,250 TypeScript (+5,712/-536, 53 fájl)
+**Git range:** feat(04-01) → docs(phase-06)
+
+**Key accomplishments:**
+1. BriefData séma bővítés ~25 Agency Brief mezővel + centralizált szekció definíciók
+2. Szekció-alapú adaptív kikérdezési stratégia természetes AI beszélgetéssel
+3. Read-only BriefEditor jóváhagyási flow + köszönő oldal + PDF letöltés
+4. AI háttérkutatás pipeline (web search + structured output) — csatorna mix, targeting, KPI becslés
+5. ExcelJS xlsx template kitöltés (Agency Brief + Mediaplan 4 variáns + combine)
+6. PM email delivery SendGrid xlsx melléklettel + error handling + retry
+
+**Requirements:** 22/22 satisfied (DATA: 5, APPR: 4, RSCH: 6, XLSX: 4, DLVR: 3)
+**Audit:** passed — see milestones/v1.1-MILESTONE-AUDIT.md
+
+---
+

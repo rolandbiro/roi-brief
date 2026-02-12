@@ -21,7 +21,7 @@ A rendszer programmatikusan kitölti az Agency Brief és Mediaplan xlsx template
 - 1 db kombinált xlsx melléklet (Agency Brief + Mediaplan külön sheet-eken)
 
 ### KPI értékek megjelenítése
-- Mind a 3 érték megjelenik: Min | Likely | Max — külön oszlopokban
+- Csak a "likely" érték kerül a meglévő template oszlopba — a template-ek nem módosulnak (plan-phase checkpoint döntés: 2026-02-12)
 - Ha egy KPI metrika nem releváns (pl. CPA awareness kampánynál): üres cella
 - Nincs AI-becslés jelölés — a PM tudja, hogy az AI tölti ki
 
