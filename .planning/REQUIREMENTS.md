@@ -1,0 +1,117 @@
+# Requirements: ROI Brief Assistant
+
+**Defined:** 2026-02-12
+**Core Value:** Az AI asszisztens kampánytípustól függően releváns, szakmai mélységű kérdéseket tesz fel — adaptív kikérdezés, ami profi brieffé áll össze, majd háttérkutatással kiegészített mediaplan-t generál a PM-nek.
+
+## v1.1 Requirements
+
+Requirements for v1.1 Enhanced Brief + AI Research. Each maps to roadmap phases.
+
+### Adatgyűjtés (DATA)
+
+- [ ] **DATA-01**: Az AI az Agency Brief template összes üzleti mezőjét gyűjti chatben (cégnév, kontakt, tevékenységi kör, márka pozicionálás, kampány részletek, célcsoport, időzítés, költségvetés, versenytársak, technikai infok)
+- [ ] **DATA-02**: A BriefData Zod séma bővül az összes Agency Brief mezővel (kontakt email/telefon, kreatív típusok, csatorna checkboxok, KPI checkboxok, demográfiai adatok, persona, stb.)
+- [ ] **DATA-03**: Az AI természetesen, csoportosítva kérdez — nem sorban 25 mezőt, hanem témakörönként adaptívan (pl. "Mesélj a cégről és a kampányról" → több mező kitölthető egy válaszból)
+- [ ] **DATA-04**: A prompt kezeli az átfedéseket a meglévő típusspecifikus kérdések és az Agency Brief mezők között — nem kérdez rá kétszer ugyanarra
+- [ ] **DATA-05**: A kontakt adatokat (email, telefon) a konverzáció végén kéri az AI, nem az elején
+
+### Jóváhagyás (APPR)
+
+- [ ] **APPR-01**: A BriefEditor megjeleníti az összes összegyűjtött adatot szekciónként (Agency Brief struktúra szerint)
+- [ ] **APPR-02**: Az ügyfél jóváhagyás gombbal véglegesíti a brief-et (email cím megadása nélkül)
+- [ ] **APPR-03**: Jóváhagyás után az ügyfél letöltheti a PDF-et (mint eddig, ROI Works arculatban)
+- [ ] **APPR-04**: Jóváhagyás triggereli a háttér AI kutatást — az ügyfél „Köszönjük" oldalt kap és a session véget ér
+
+### AI háttérkutatás (RSCH)
+
+- [ ] **RSCH-01**: A szerver háttérben futtatja az AI kutatást a jóváhagyott brief adatok alapján (Next.js after() / background processing)
+- [ ] **RSCH-02**: Az AI web search-öt használ (Anthropic web_search tool) a kampányhoz releváns piaci adatok kutatásához
+- [ ] **RSCH-03**: Az AI csatorna mix javaslatot generál a brief alapján (mely platformokon, milyen kampánytípusokkal: prospecting/retargeting, banner/video)
+- [ ] **RSCH-04**: Az AI targeting javaslatot ad platformonként (Google Affinity/In-market, Meta Interests, TikTok érdeklődési körök — magyar piacra lokalizálva)
+- [ ] **RSCH-05**: Az AI KPI becsléseket generál (megjelenés, kattintás, konverzió, CPM/CPC/CTR) a büdzsé és kampánycél alapján
+- [ ] **RSCH-06**: Az AI kutatási eredmények strukturált formátumban (JSON/interface) állnak elő, amik az xlsx template mezőire mappelhetők
+
+### Xlsx generálás (XLSX)
+
+- [ ] **XLSX-01**: Az app programmatikusan kitölti az Agency Brief xlsx template-et az ügyfél által megadott adatokkal
+- [ ] **XLSX-02**: Az app programmatikusan kitölti a Mediaplan all channels xlsx template-et az AI kutatás eredményeivel (PPC channel mix, metrikák, targeting, költségelosztás)
+- [ ] **XLSX-03**: Az xlsx generálás megőrzi az eredeti template formázását (cellák, stílusok, összevont cellák)
+- [ ] **XLSX-04**: A Mediaplan xlsx dinamikus sorokat tartalmaz az AI által javasolt channel mix alapján
+
+### Delivery (DLVR)
+
+- [ ] **DLVR-01**: A kitöltött Agency Brief xlsx + Mediaplan xlsx emailben elküldésre kerül a ROI Works projekt menedzsernek
+- [ ] **DLVR-02**: Az email tartalmaz egy rövid összefoglalót a brief-ről (ügyfél neve, kampány neve, büdzsé, időszak)
+- [ ] **DLVR-03**: Ha a háttérkutatás vagy xlsx generálás hibára fut, a PM hibaértesítést kap emailben (nem marad csendben)
+
+## v2 Requirements
+
+Deferred to future release. Tracked but not in current roadmap.
+
+### UX fejlesztések
+
+- **UX-01**: Progress indikátor a chatben (hányadik témakör, hány mező van hátra)
+- **UX-02**: Quality scoring — a brief teljességének értékelése (hiányzó/vékony mezők jelzése)
+- **UX-03**: Auto-save / draft recovery — félbehagyott brief folytatása
+
+### Analytics
+
+- **ANLY-01**: Completion rate monitoring (hány ügyfél végzi el a teljes brief-et)
+- **ANLY-02**: Drop-off pont detekció (melyik kérdésnél hagyják abba)
+- **ANLY-03**: Kampánytípus statisztikák
+
+### Haladó funkciók
+
+- **ADV-01**: Config-based új kampánytípusok hozzáadása (kód módosítás nélkül)
+- **ADV-02**: Xlsx template variáns kiválasztása (Reach only, Traffic only, stb.) a brief alapján
+- **ADV-03**: AI kutatás validáció — PM visszajelzés az AI becslések pontosságáról
+
+## Out of Scope
+
+| Feature | Reason |
+|---------|--------|
+| PDF feltöltés / ajánlat elemzés | Ajánlatadás előtti flow, nincs mit feltölteni |
+| Felhasználói fiók / bejelentkezés | Anonim session marad, konverziót rontaná |
+| Database / persistent storage | Vercel KV elég a háttérfeldolgozáshoz, teljes DB overkill |
+| Élő platform API-k (Google Ads, Meta) | Az AI kutatás web search-ből és LLM tudásból dolgozik, nem API integrációból |
+| Ügyfélnek email küldése | Az ügyfél letölti a PDF-et, nem kap emailt |
+| Design brief / website brief | Más domain, más kérdéskészlet |
+| Multi-language | Csak magyar piac |
+
+## Traceability
+
+Which phases cover which requirements. Updated during roadmap creation.
+
+| Requirement | Phase | Status |
+|-------------|-------|--------|
+| DATA-01 | — | Pending |
+| DATA-02 | — | Pending |
+| DATA-03 | — | Pending |
+| DATA-04 | — | Pending |
+| DATA-05 | — | Pending |
+| APPR-01 | — | Pending |
+| APPR-02 | — | Pending |
+| APPR-03 | — | Pending |
+| APPR-04 | — | Pending |
+| RSCH-01 | — | Pending |
+| RSCH-02 | — | Pending |
+| RSCH-03 | — | Pending |
+| RSCH-04 | — | Pending |
+| RSCH-05 | — | Pending |
+| RSCH-06 | — | Pending |
+| XLSX-01 | — | Pending |
+| XLSX-02 | — | Pending |
+| XLSX-03 | — | Pending |
+| XLSX-04 | — | Pending |
+| DLVR-01 | — | Pending |
+| DLVR-02 | — | Pending |
+| DLVR-03 | — | Pending |
+
+**Coverage:**
+- v1.1 requirements: 22 total
+- Mapped to phases: 0
+- Unmapped: 22 ⚠️
+
+---
+*Requirements defined: 2026-02-12*
+*Last updated: 2026-02-12 after initial definition*
