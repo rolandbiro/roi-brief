@@ -70,11 +70,11 @@ Plans:
   2. A Mediaplan xlsx template tartalmazza az AI kutatás eredményeit: dinamikus PPC sorok a javasolt channel mix alapján (kampány cél, csatorna, hirdetés típus, metrikák, költségek)
   3. A PM emailben megkapja mindkét kitöltött xlsx-et csatolmányként, egy rövid összefoglalóval a brief-ről (ügyfél neve, kampány neve, büdzsé, időszak)
   4. Ha a háttérkutatás vagy xlsx generálás hibára fut, a PM hibaértesítést kap emailben — nem marad csendben
-**Plans**: TBD
+**Plans**: 2 plans
 
 Plans:
-- [ ] 06-01: TBD
-- [ ] 06-02: TBD
+- [ ] 06-01-PLAN.md — ExcelJS xlsx template kitöltés (Agency Brief + Mediaplan 4 variáns + combine)
+- [ ] 06-02-PLAN.md — PM email delivery + error handling + retry + Vercel config
 
 ## Progress
 
@@ -88,4 +88,4 @@ Phases execute in numeric order: 4 → 5 → 6
 | 3. Dynamic Report & Branding | v1.0 | 4/4 | ✅ Complete | 2026-02-10 |
 | 4. Bővített adatgyűjtés és jóváhagyás | v1.1 | 3/3 | ✅ Complete | 2026-02-12 |
 | 5. AI háttérkutatás | v1.1 | 2/2 | ✅ Complete | 2026-02-12 |
-| 6. Xlsx generálás és PM delivery | v1.1 | 0/2 | Not started | - |
+| 6. Xlsx generálás és PM delivery | v1.1 | 0/2 | Planned | - |
