@@ -34,11 +34,12 @@ export const TOOL_DEFINITIONS = [
       properties: {
         field: {
           type: "string",
-          description: "Melyik mező frissüljön (pl. 'company_name', 'campaign_goal', 'media_specific.grp_target')",
+          description: "Melyik mező frissüljön. Alap mezők: company_name, contact_name, industry, brand_positioning, campaign_name, campaign_goal, main_message, creative_source, creative_types, communication_style, ad_channels, kpis, gender, location, age_range, psychographics, persona, start_date, end_date, key_events, budget_range, budget_allocation, competitors, inspiring_campaigns, existing_materials, previous_campaigns, notes. Típusspecifikus: media_specific.*, performance_specific.*, brand_specific.*, social_specific.*",
         },
         value: {
-          type: "string",
-          description: "A mező új értéke",
+          type: ["string", "array"],
+          description: "A mező új értéke. String mezőkhöz string, tömb mezőkhöz (ad_channels, kpis, gender, creative_source, creative_types, competitors) string tömb.",
+          items: { type: "string" },
         },
       },
       required: ["field", "value"],
