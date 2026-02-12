@@ -22,7 +22,7 @@ See: `.planning/milestones/v1.0-ROADMAP.md` for full details.
 
 **Milestone Goal:** Az ügyfél-oldali adatgyűjtés bővítése az Agency Brief template összes üzleti mezőjével, jóváhagyás után AI háttérkutatás a technikai adatokhoz, és kitöltött xlsx fájlok küldése a PM-nek.
 
-- [ ] **Phase 4: Bővített adatgyűjtés és jóváhagyás** — Ügyfél oldali teljes flow: kibővített chat kikérdezés + jóváhagyási képernyő
+- [x] **Phase 4: Bővített adatgyűjtés és jóváhagyás** — Ügyfél oldali teljes flow: kibővített chat kikérdezés + jóváhagyási képernyő (completed 2026-02-12)
 - [ ] **Phase 5: AI háttérkutatás** — Szerver oldali research pipeline: csatorna mix, targeting, KPI becslés
 - [ ] **Phase 6: Xlsx generálás és PM delivery** — Kitöltött xlsx template-ek előállítása és emailben küldése a PM-nek
 
@@ -41,9 +41,9 @@ See: `.planning/milestones/v1.0-ROADMAP.md` for full details.
 **Plans**: 3 plans
 
 Plans:
-- [ ] 04-01-PLAN.md — Séma bővítés + szekció centralizálás + tool/extraction frissítés
-- [ ] 04-02-PLAN.md — Prompt rendszer átírás (base + questioning + type modulok)
-- [ ] 04-03-PLAN.md — BriefEditor read-only jóváhagyás + approve API + köszönő oldal
+- [x] 04-01-PLAN.md — Séma bővítés + szekció centralizálás + tool/extraction frissítés
+- [x] 04-02-PLAN.md — Prompt rendszer átírás (base + questioning + type modulok)
+- [x] 04-03-PLAN.md — BriefEditor read-only jóváhagyás + approve API + köszönő oldal
 
 ### Phase 5: AI háttérkutatás
 **Goal**: A szerver a jóváhagyott brief alapján háttérben AI kutatást futtat — csatorna mix javaslatot, targeting ajánlásokat és KPI becsléseket generál, strukturált formátumban az xlsx kitöltéshez.
@@ -86,6 +86,6 @@ Phases execute in numeric order: 4 → 5 → 6
 | 1. Type System & Foundation | v1.0 | 3/3 | ✅ Complete | 2026-02-10 |
 | 2. Adaptive Questioning Engine | v1.0 | 3/3 | ✅ Complete | 2026-02-10 |
 | 3. Dynamic Report & Branding | v1.0 | 4/4 | ✅ Complete | 2026-02-10 |
-| 4. Bővített adatgyűjtés és jóváhagyás | v1.1 | 0/3 | Planned | - |
+| 4. Bővített adatgyűjtés és jóváhagyás | v1.1 | 3/3 | ✅ Complete | 2026-02-12 |
 | 5. AI háttérkutatás | v1.1 | 0/2 | Not started | - |
 | 6. Xlsx generálás és PM delivery | v1.1 | 0/2 | Not started | - |
