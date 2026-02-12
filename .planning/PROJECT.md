@@ -4,6 +4,17 @@
 
 A ROI Works marketing ügynökség AI brief asszisztense, ahol egy chatbot kampánytípus-specifikus kérdésekkel kérdezi ki az érdeklődőt. Az érdeklődő direkt linkről érkezik, az AI adaptívan kérdez (médiavásárlás, performance, brand, social), és a végén dinamikus riport generálódik ROI Works arculatban — PDF letöltéssel és email küldéssel.
 
+## Current Milestone: v1.1 Enhanced Brief + AI Research
+
+**Goal:** Az ügyfél-oldali adatgyűjtés bővítése az Agency Brief template összes üzleti mezőjével, majd jóváhagyás után AI háttérkutatás a technikai adatokhoz (targeting, channel mix, mediaplan) — és kitöltött xlsx fájlok küldése a PM-nek.
+
+**Target features:**
+- Bővített AI chat: Agency Brief összes üzleti mezőjének strukturált gyűjtése
+- Ügyfél jóváhagyási flow: áttekintés → PDF letöltés (email cím nélkül)
+- AI háttérkutatás: csatorna mix, targeting, KPI becslés, versenytárs-elemzés
+- Xlsx generálás: Agency Brief + Mediaplan all channels template kitöltése
+- PM email: kitöltött xlsx fájlok küldése a ROI Works projekt menedzsernek
+
 ## Core Value
 
 Az AI asszisztens kampánytípustól függően releváns, szakmai mélységű kérdéseket tesz fel — nem sablonos, hanem adaptív kikérdezést végez, ami profi brieffé áll össze.
@@ -33,7 +44,11 @@ Az AI asszisztens kampánytípustól függően releváns, szakmai mélységű k�
 
 ### Active
 
-(Nincs — következő milestone-ban definiálandó)
+- [ ] Bővített adatgyűjtés: Agency Brief template üzleti mezői (cégnév, kontakt, büdzsé, időzítés, stb.)
+- [ ] Jóváhagyási flow: ügyfél áttekinti az összegyűjtött adatokat, letölti PDF-ben
+- [ ] AI háttérkutatás: targeting, channel mix, KPI becslés, versenytárs-elemzés
+- [ ] Xlsx generálás: programmatikusan kitöltött Agency Brief + Mediaplan xlsx
+- [ ] PM email: kitöltött xlsx fájlok küldése emailben
 
 ### Out of Scope
 
@@ -70,6 +85,7 @@ Az AI asszisztens kampánytípustól függően releváns, szakmai mélységű k�
 - **Nyelv**: Magyar nyelvű UI és AI kommunikáció, tegező stílus
 - **Anonim**: Nincs auth, nincs persistent storage — session-based
 - **Kompatibilitás**: Email küldés és PDF generálás megmarad
+- **Xlsx template**: Az output xlsx fájloknak az elvárt ROI Works template struktúrát kell követniük (docs/ROI_Mediaplan/)
 
 ## Key Decisions
 
@@ -87,4 +103,4 @@ Az AI asszisztens kampánytípustól függően releváns, szakmai mélységű k�
 | Extraction: briefState assembly (nem Claude API) | messages.parse() broken volt v0.74.0-ban | ✓ Good — gyorsabb, megbízhatóbb, olcsóbb |
 
 ---
-*Last updated: 2026-02-10 after v1.0 milestone*
+*Last updated: 2026-02-12 after v1.1 milestone start*
