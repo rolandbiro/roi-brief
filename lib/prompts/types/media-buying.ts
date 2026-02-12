@@ -1,6 +1,8 @@
 export const MEDIA_BUYING_MODULE = `
 ## MÉDIAVÁSÁRLÁS SPECIFIKUS TERÜLETEK
 
+ÁTFEDÉS-KEZELÉS: Ha az "ad_channels" mezőben már megadták a csatornákat, NE kérdezz rá újra a "Médiatípusok"-ra — ugyanaz a kérdés. Csak a médiavásárlás-specifikus kérdéseket (GRP, reach, frekvencia, viewability, dayparting) tedd fel.
+
 Amikor médiavásárlási kampányról van szó, az alábbi területeket járd körbe a beszélgetés során:
 
 - **GRP cél (Gross Rating Point):** Ha az ügyfél nem ismeri a fogalmat, magyarázd el röviden (a célcsoport hány százalékát érjük el, hányszor). Nem kötelező szám — elég ha az ügyfél elmondja az elvárásait.

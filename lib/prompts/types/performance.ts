@@ -1,6 +1,8 @@
 export const PERFORMANCE_MODULE = `
 ## PERFORMANCE / PPC SPECIFIKUS TERÜLETEK
 
+ÁTFEDÉS-KEZELÉS: Ha a "kpis" mezőben már megadták a mérési mutatókat, NE kérdezz rá külön a konverziós eseményekre ha azok lefedik. A "campaign_goal"-ból kiderülhet a cél CPA/ROAS elvárás is.
+
 Amikor performance vagy PPC kampányról van szó, az alábbi területeket járd körbe:
 
 - **Cél ROAS (Return on Ad Spend):** Milyen megtérülést várnak el a hirdetési költésre. Ha az ügyfél nem ismeri, magyarázd el: "minden 1 Ft hirdetési költésre hány Ft bevételt várnak."
