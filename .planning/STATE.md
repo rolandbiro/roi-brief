@@ -5,24 +5,24 @@
 See: .planning/PROJECT.md (updated 2026-02-12)
 
 **Core value:** Az AI asszisztens kampánytípustól függően releváns, szakmai mélységű kérdéseket tesz fel — adaptív kikérdezés, ami profi brieffé áll össze, majd háttérkutatással kiegészített mediaplan-t generál a PM-nek.
-**Current focus:** Phase 5 COMPLETE — AI háttérkutatás
+**Current focus:** Phase 6 IN PROGRESS — XLSX generálás és PM delivery
 
 ## Current Position
 
-Phase: 5 of 6 (AI háttérkutatás) COMPLETE
-Plan: 2 of 2 in current phase COMPLETE
-Status: Phase 5 complete, ready for Phase 6
-Last activity: 2026-02-12 — Completed 05-02-PLAN.md
+Phase: 6 of 6 (XLSX generálás és PM delivery) IN PROGRESS
+Plan: 1 of 2 in current phase COMPLETE
+Status: Plan 06-01 complete, ready for Plan 06-02
+Last activity: 2026-02-12 — Completed 06-01-PLAN.md
 
-Progress: [████████████████░░░░] 88% (15/17 plans across all milestones)
+Progress: [█████████████████░░░] 94% (16/17 plans across all milestones)
 
 ## Performance Metrics
 
 **v1.0 Milestone:**
-- Total plans completed: 15
+- Total plans completed: 16
 - Average duration: 5min
-- Total execution time: 82min
-- Timeline: 28 nap (2026-01-13 → 2026-02-10)
+- Total execution time: 86min
+- Timeline: 28 nap (2026-01-13 → 2026-02-12)
 
 **By Phase:**
 
@@ -33,6 +33,7 @@ Progress: [████████████████░░░░] 88% (15
 | 03 | 4/4 | 43min | 11min |
 | 04 | 3/3 | 9min | 3min |
 | 05 | 2/2 | 4min | 2min |
+| 06 | 1/2 | 4min | 4min |
 
 ## Accumulated Context
 
@@ -54,6 +55,9 @@ Recent decisions affecting current work:
 - [05-02]: pause_turn loop a search step-ben — az API megszakíthatja, a loop folytatja
 - [05-02]: maxDuration=120 Vercel timeout kezeléshez az after() callback-ben
 - [05-02]: Pipeline results egyelőre console.log — Phase 6 oldja meg a persistálást
+- [06-01]: ExcelJS 4.4.0 template fill — read, modify cells, writeBuffer pattern
+- [06-01]: Csak 'likely' KPI érték kerül a template oszlopba — template-ek nem módosulnak
+- [06-01]: PPC Mixed channels split: frequency/reach/cpm metrikájú → reach blokk, többi → traffic blokk
 
 ### Pending Todos
 
@@ -66,5 +70,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-02-12
-Stopped at: Completed 05-02-PLAN.md (Phase 5 complete — teljes research pipeline: approve → pipeline → search → structure → ResearchResults)
-Resume: `/gsd:execute-phase 06` (Phase 6 — XLSX generálás és PM delivery)
+Stopped at: Completed 06-01-PLAN.md (XLSX core generation: fillAgencyBrief + fillMediaplan 4 variáns + combineWorkbooks)
+Resume: `/gsd:execute-plan .planning/phases/06-xlsx-generalas-pm-delivery/06-02-PLAN.md` (PM delivery pipeline)
