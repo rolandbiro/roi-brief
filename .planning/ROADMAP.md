@@ -55,11 +55,11 @@ Plans:
   3. Az AI platformonként targeting javaslatot ad magyar piacra lokalizálva (Google Affinity/In-market, Meta Interests, TikTok érdeklődési körök)
   4. Az AI KPI becsléseket generál a büdzsé és kampánycél alapján (megjelenés, kattintás, konverzió, CPM/CPC/CTR — tartományként, nem pontos számokkal)
   5. A kutatási eredmények strukturált formátumban (ResearchResults interface) állnak elő, amik közvetlenül mappelhetők az xlsx template mezőire
-**Plans**: TBD
+**Plans**: 2 plans
 
 Plans:
-- [ ] 05-01: TBD
-- [ ] 05-02: TBD
+- [ ] 05-01-PLAN.md — ResearchResults Zod schema, template mapper, research prompt-ok
+- [ ] 05-02-PLAN.md — Web search + structured output pipeline, approve route bekötés
 
 ### Phase 6: Xlsx generálás és PM delivery
 **Goal**: A rendszer programmatikusan kitölti az Agency Brief és Mediaplan xlsx template-eket, majd emailben elküldi a PM-nek — a teljes pipeline hiba esetén a PM értesítést kap.
@@ -87,5 +87,5 @@ Phases execute in numeric order: 4 → 5 → 6
 | 2. Adaptive Questioning Engine | v1.0 | 3/3 | ✅ Complete | 2026-02-10 |
 | 3. Dynamic Report & Branding | v1.0 | 4/4 | ✅ Complete | 2026-02-10 |
 | 4. Bővített adatgyűjtés és jóváhagyás | v1.1 | 3/3 | ✅ Complete | 2026-02-12 |
-| 5. AI háttérkutatás | v1.1 | 0/2 | Not started | - |
+| 5. AI háttérkutatás | v1.1 | 0/2 | Planned | - |
 | 6. Xlsx generálás és PM delivery | v1.1 | 0/2 | Not started | - |
