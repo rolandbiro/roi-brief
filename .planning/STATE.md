@@ -5,23 +5,23 @@
 See: .planning/PROJECT.md (updated 2026-02-12)
 
 **Core value:** Az AI asszisztens kampánytípustól függően releváns, szakmai mélységű kérdéseket tesz fel — adaptív kikérdezés, ami profi brieffé áll össze, majd háttérkutatással kiegészített mediaplan-t generál a PM-nek.
-**Current focus:** Phase 4 COMPLETE — Bővített adatgyűjtés és jóváhagyás
+**Current focus:** Phase 5 IN PROGRESS — AI háttérkutatás
 
 ## Current Position
 
-Phase: 4 of 6 (Bővített adatgyűjtés és jóváhagyás) COMPLETE
-Plan: 3 of 3 in current phase
-Status: Phase Complete
-Last activity: 2026-02-12 — Completed 04-03-PLAN.md
+Phase: 5 of 6 (AI háttérkutatás)
+Plan: 1 of 2 in current phase COMPLETE
+Status: Executing
+Last activity: 2026-02-12 — Completed 05-01-PLAN.md
 
-Progress: [█████████████░░░░░░░] 76% (13/17 plans across all milestones)
+Progress: [██████████████░░░░░░] 82% (14/17 plans across all milestones)
 
 ## Performance Metrics
 
 **v1.0 Milestone:**
-- Total plans completed: 13
+- Total plans completed: 14
 - Average duration: 5min
-- Total execution time: 78min
+- Total execution time: 80min
 - Timeline: 28 nap (2026-01-13 → 2026-02-10)
 
 **By Phase:**
@@ -32,6 +32,7 @@ Progress: [█████████████░░░░░░░] 76% (13
 | 02 | 3/3 | 14min | 5min |
 | 03 | 4/4 | 43min | 11min |
 | 04 | 3/3 | 9min | 3min |
+| 05 | 1/2 | 2min | 2min |
 
 ## Accumulated Context
 
@@ -47,6 +48,8 @@ Recent decisions affecting current work:
 - [04-01]: EXECUTIVE_SUMMARY eltávolítva — AGENCY_BRIEF_SECTIONS első szekciója tölti be a szerepet
 - [04-03]: Email input és send-brief route eltávolítva — ügyfélnek nem küldünk emailt, PM értesítés Phase 6
 - [04-03]: getActiveSections key property-vel bővítve a badge field detekció miatt
+- [05-01]: Zod schemák egyszerűek (no refine/transform) a zodOutputFormat() kompatibilitás miatt
+- [05-01]: ChannelRow metrikák mind optional — kampánycéltól függően töltődnek ki
 
 ### Pending Todos
 
@@ -59,5 +62,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-02-12
-Stopped at: Phase 4 verified + human approved. Prompt fixes (kérdezési sorrend, quick reply, single-topic) commitolva.
-Resume: `/gsd:plan-phase 5`
+Stopped at: Completed 05-01-PLAN.md (research pipeline alapok: types, template-mapper, prompts)
+Resume: `/gsd:execute-phase 05` (Plan 02 — pipeline orchestrator, search, structure)
