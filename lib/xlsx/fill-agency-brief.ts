@@ -75,4 +75,19 @@ function fillBriefCells(ws: ExcelJS.Worksheet, brief: BriefData): void {
   if (brief.start_date) ws.getCell("B56").value = brief.start_date;
   if (brief.end_date) ws.getCell("B58").value = brief.end_date;
   if (brief.key_events) ws.getCell("B60").value = brief.key_events;
+
+  // --- Koltsegvetes ---
+  if (brief.budget_range) ws.getCell("B64").value = brief.budget_range;
+  if (brief.budget_allocation) ws.getCell("B66").value = brief.budget_allocation;
+
+  // --- Versenytarsak ---
+  if (brief.competitors) {
+    ws.getCell("B70").value = Array.isArray(brief.competitors)
+      ? brief.competitors.join(", ")
+      : brief.competitors;
+  }
+  if (brief.inspiring_campaigns) ws.getCell("B72").value = brief.inspiring_campaigns;
+
+  // --- Egyeb ---
+  if (brief.notes) ws.getCell("B76").value = brief.notes;
 }
