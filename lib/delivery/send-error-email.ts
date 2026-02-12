@@ -32,7 +32,7 @@ export async function sendErrorEmail(
       ? `A részben elkészült xlsx csatolva. A ${failedStep} lépés nem sikerült.`
       : `Az xlsx generálás nem készült el.`,
     ``,
-    `Újrapróbálható az alábbi linkre küldött POST kéréssel:`,
+    `Újrapróbálható az alábbi linken:`,
     retryUrl,
   ].join("\n");
 
