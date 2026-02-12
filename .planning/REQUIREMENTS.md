@@ -11,7 +11,7 @@ Requirements for v1.1 Enhanced Brief + AI Research. Each maps to roadmap phases.
 
 - [ ] **DATA-01**: Az AI az Agency Brief template összes üzleti mezőjét gyűjti chatben (cégnév, kontakt, tevékenységi kör, márka pozicionálás, kampány részletek, célcsoport, időzítés, költségvetés, versenytársak, technikai infok)
 - [ ] **DATA-02**: A BriefData Zod séma bővül az összes Agency Brief mezővel (kontakt email/telefon, kreatív típusok, csatorna checkboxok, KPI checkboxok, demográfiai adatok, persona, stb.)
-- [ ] **DATA-03**: Az AI természetesen, csoportosítva kérdez — nem sorban 25 mezőt, hanem témakörönként adaptívan (pl. "Mesélj a cégről és a kampányról" → több mező kitölthető egy válaszból)
+- [ ] **DATA-03**: Az AI természetesen, csoportosítva kérdez — nem sorban 25 mezőt, hanem témakörönként adaptívan (pl. "Mesélj a cégről és a kampányról" -> több mező kitölthető egy válaszból)
 - [ ] **DATA-04**: A prompt kezeli az átfedéseket a meglévő típusspecifikus kérdések és az Agency Brief mezők között — nem kérdez rá kétszer ugyanarra
 - [ ] **DATA-05**: A kontakt adatokat (email, telefon) a konverzáció végén kéri az AI, nem az elején
 
@@ -20,7 +20,7 @@ Requirements for v1.1 Enhanced Brief + AI Research. Each maps to roadmap phases.
 - [ ] **APPR-01**: A BriefEditor megjeleníti az összes összegyűjtött adatot szekciónként (Agency Brief struktúra szerint)
 - [ ] **APPR-02**: Az ügyfél jóváhagyás gombbal véglegesíti a brief-et (email cím megadása nélkül)
 - [ ] **APPR-03**: Jóváhagyás után az ügyfél letöltheti a PDF-et (mint eddig, ROI Works arculatban)
-- [ ] **APPR-04**: Jóváhagyás triggereli a háttér AI kutatást — az ügyfél „Köszönjük" oldalt kap és a session véget ér
+- [ ] **APPR-04**: Jóváhagyás triggereli a háttér AI kutatást — az ügyfél "Köszönjük" oldalt kap és a session véget ér
 
 ### AI háttérkutatás (RSCH)
 
@@ -84,34 +84,34 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| DATA-01 | — | Pending |
-| DATA-02 | — | Pending |
-| DATA-03 | — | Pending |
-| DATA-04 | — | Pending |
-| DATA-05 | — | Pending |
-| APPR-01 | — | Pending |
-| APPR-02 | — | Pending |
-| APPR-03 | — | Pending |
-| APPR-04 | — | Pending |
-| RSCH-01 | — | Pending |
-| RSCH-02 | — | Pending |
-| RSCH-03 | — | Pending |
-| RSCH-04 | — | Pending |
-| RSCH-05 | — | Pending |
-| RSCH-06 | — | Pending |
-| XLSX-01 | — | Pending |
-| XLSX-02 | — | Pending |
-| XLSX-03 | — | Pending |
-| XLSX-04 | — | Pending |
-| DLVR-01 | — | Pending |
-| DLVR-02 | — | Pending |
-| DLVR-03 | — | Pending |
+| DATA-01 | Phase 4 | Pending |
+| DATA-02 | Phase 4 | Pending |
+| DATA-03 | Phase 4 | Pending |
+| DATA-04 | Phase 4 | Pending |
+| DATA-05 | Phase 4 | Pending |
+| APPR-01 | Phase 4 | Pending |
+| APPR-02 | Phase 4 | Pending |
+| APPR-03 | Phase 4 | Pending |
+| APPR-04 | Phase 4 | Pending |
+| RSCH-01 | Phase 5 | Pending |
+| RSCH-02 | Phase 5 | Pending |
+| RSCH-03 | Phase 5 | Pending |
+| RSCH-04 | Phase 5 | Pending |
+| RSCH-05 | Phase 5 | Pending |
+| RSCH-06 | Phase 5 | Pending |
+| XLSX-01 | Phase 6 | Pending |
+| XLSX-02 | Phase 6 | Pending |
+| XLSX-03 | Phase 6 | Pending |
+| XLSX-04 | Phase 6 | Pending |
+| DLVR-01 | Phase 6 | Pending |
+| DLVR-02 | Phase 6 | Pending |
+| DLVR-03 | Phase 6 | Pending |
 
 **Coverage:**
 - v1.1 requirements: 22 total
-- Mapped to phases: 0
-- Unmapped: 22 ⚠️
+- Mapped to phases: 22
+- Unmapped: 0
 
 ---
 *Requirements defined: 2026-02-12*
-*Last updated: 2026-02-12 after initial definition*
+*Last updated: 2026-02-12 after roadmap creation*

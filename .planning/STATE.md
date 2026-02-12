@@ -4,15 +4,17 @@
 
 See: .planning/PROJECT.md (updated 2026-02-12)
 
-**Core value:** Az AI asszisztens kampánytípustól függően releváns, szakmai mélységű kérdéseket tesz fel — adaptív kikérdezés, ami profi brieffé áll össze.
-**Current focus:** v1.1 Enhanced Brief + AI Research
+**Core value:** Az AI asszisztens kampánytípustól függően releváns, szakmai mélységű kérdéseket tesz fel — adaptív kikérdezés, ami profi brieffé áll össze, majd háttérkutatással kiegészített mediaplan-t generál a PM-nek.
+**Current focus:** Phase 4 — Bővített adatgyűjtés és jóváhagyás
 
 ## Current Position
 
-Phase: Not started (defining requirements)
-Plan: —
-Status: Defining requirements
-Last activity: 2026-02-12 — Milestone v1.1 started
+Phase: 4 of 6 (Bővített adatgyűjtés és jóváhagyás)
+Plan: 0 of 3 in current phase
+Status: Ready to plan
+Last activity: 2026-02-12 — Roadmap created for v1.1
+
+Progress: [██████████░░░░░░░░░░] 59% (10/17 plans across all milestones)
 
 ## Performance Metrics
 
@@ -35,6 +37,11 @@ Last activity: 2026-02-12 — Milestone v1.1 started
 ### Decisions
 
 Decisions are logged in PROJECT.md Key Decisions table.
+Recent decisions affecting current work:
+
+- [v1.1 roadmap]: DATA+APPR kombinálva Phase 4-be (kliensoldali, research előtti munka)
+- [v1.1 roadmap]: XLSX+DLVR kombinálva Phase 6-ba (szerveroldali output pipeline)
+- [v1.1 roadmap]: 3 fázis (quick depth), strictly sequential dependency chain
 
 ### Pending Todos
 
@@ -47,5 +54,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-02-12
-Stopped at: v1.1 milestone started, defining requirements
-Resume: Continue with requirements definition
+Stopped at: v1.1 roadmap created, ready to plan Phase 4
+Resume: `/gsd:plan-phase 4`
