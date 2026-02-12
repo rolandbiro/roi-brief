@@ -6,6 +6,7 @@ export async function sendPmEmail(
   briefData: BriefData,
   research: ResearchResults,
   xlsxBuffer: Buffer,
+  pdfBuffer?: Buffer,
 ): Promise<void> {
   sgMail.setApiKey(process.env.SENDGRID_API_KEY!);
 
@@ -31,7 +32,9 @@ export async function sendPmEmail(
       ? `Időszak: ${briefData.start_date || "?"} - ${briefData.end_date || "?"}`
       : null,
     sourcesText,
-    "\nA kitöltött Agency Brief és Mediaplan xlsx csatolva.",
+    pdfBuffer
+      ? "\nCsatolva: Agency Brief + Mediaplan (xlsx) és az ügyfél brief összefoglaló (PDF)."
+      : "\nA kitöltött Agency Brief és Mediaplan xlsx csatolva.",
   ]
     .filter(Boolean)
     .join("\n");
@@ -49,6 +52,16 @@ export async function sendPmEmail(
         type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
         disposition: "attachment",
       },
+      ...(pdfBuffer
+        ? [
+            {
+              content: pdfBuffer.toString("base64"),
+              filename: `${companyName}-brief.pdf`,
+              type: "application/pdf",
+              disposition: "attachment" as const,
+            },
+          ]
+        : []),
     ],
   });
 }

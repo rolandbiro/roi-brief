@@ -17,7 +17,7 @@ export async function structureResults(
     messages: [
       {
         role: "user",
-        content: `Kutatási eredmények:\n\n${rawResearch}\n\nBrief adatok:\n- Kampány név: ${briefData.campaign_name || briefData.company_name + " kampány"}\n- Kampány cél: ${briefData.campaign_goal}\n- Büdzsé: ${briefData.budget_range || "nem megadott"}\n- Időszak: ${briefData.start_date || "?"} - ${briefData.end_date || "?"}`,
+        content: `Kutatási eredmények:\n\n${rawResearch}\n\nBrief adatok:\n- Kampány név: ${briefData.campaign_name || briefData.company_name + " kampány"}\n- Kampány cél: ${briefData.campaign_goal}\n- Büdzsé LIMIT: ${briefData.budget_range || "nem megadott"} — a total_budget_huf NEM HALADHATJA MEG ezt az összeget!\n- Időszak: ${briefData.start_date || "?"} - ${briefData.end_date || "?"}\n- Engedélyezett csatornák: ${briefData.ad_channels?.length ? briefData.ad_channels.join(", ") + " — KIZÁRÓLAG ezeket használd, NE adj hozzá mást!" : "nincs megszorítás"}`,
       },
     ],
     output_config: {

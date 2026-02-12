@@ -3,6 +3,7 @@ import { fillAgencyBrief } from "@/lib/xlsx/fill-agency-brief";
 import { fillMediaplan } from "@/lib/xlsx/fill-mediaplan";
 import { combineWorkbooks } from "@/lib/xlsx/combine-workbook";
 import { sendPmEmail } from "@/lib/delivery/send-pm-email";
+import { generateBriefPdf } from "@/lib/pdf/generate-brief-pdf";
 import type { BriefData } from "@/types/brief";
 
 export const maxDuration = 120;
@@ -115,7 +116,13 @@ export async function POST(
     const briefBuffer = await fillAgencyBrief(briefData);
     const mediaplanBuffer = await fillMediaplan(results, briefData);
     const combinedBuffer = await combineWorkbooks(briefBuffer, mediaplanBuffer);
-    await sendPmEmail(briefData, results, combinedBuffer);
+    let pdfBuffer: Buffer | undefined;
+    try {
+      pdfBuffer = await generateBriefPdf(briefData);
+    } catch {
+      console.error("[retry] PDF generation failed, sending without PDF");
+    }
+    await sendPmEmail(briefData, results, combinedBuffer, pdfBuffer);
 
     return Response.json({
       success: true,

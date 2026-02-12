@@ -5,6 +5,7 @@ import { fillMediaplan } from "@/lib/xlsx/fill-mediaplan";
 import { combineWorkbooks } from "@/lib/xlsx/combine-workbook";
 import { sendPmEmail } from "@/lib/delivery/send-pm-email";
 import { sendErrorEmail } from "@/lib/delivery/send-error-email";
+import { generateBriefPdf } from "@/lib/pdf/generate-brief-pdf";
 
 export const maxDuration = 120;
 
@@ -114,9 +115,19 @@ export async function POST(request: Request) {
       return;
     }
 
-    // Step 5: Send PM email
+    // Step 5: Generate PDF for client brief
+    let pdfBuffer: Buffer | undefined;
     try {
-      await sendPmEmail(briefData, results, combinedBuffer);
+      pdfBuffer = await generateBriefPdf(briefData);
+      console.log("[approve] PDF generated successfully");
+    } catch (error) {
+      // PDF hiba nem blokkolja az email küldést — XLSX elég
+      console.error("[approve] PDF generation failed:", error);
+    }
+
+    // Step 6: Send PM email
+    try {
+      await sendPmEmail(briefData, results, combinedBuffer, pdfBuffer);
       console.log("[approve] PM email sent successfully");
     } catch (error) {
       // NEM kuldunk error emailt — infinite loop lenne

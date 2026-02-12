@@ -1,6 +1,7 @@
 import ExcelJS from "exceljs";
 import fs from "fs";
 import type { BriefData } from "@/types/brief";
+import { CAMPAIGN_TYPE_LABELS, type CampaignType } from "@/types/brief";
 import { getTemplatePath } from "./template-paths";
 
 export async function fillAgencyBrief(briefData: BriefData): Promise<Buffer> {
@@ -16,6 +17,19 @@ export async function fillAgencyBrief(briefData: BriefData): Promise<Buffer> {
   return Buffer.from(buffer);
 }
 
+/** Case-insensitive check: does the array contain a value starting with prefix? */
+function hasChannel(channels: string[], label: string): boolean {
+  const prefix = label.replace(/ ads$/i, "").toLowerCase();
+  return channels.some(
+    (c) => c.toLowerCase() === prefix || c.toLowerCase() === label.toLowerCase(),
+  );
+}
+
+function hasAny(arr: string[], ...needles: string[]): boolean {
+  const lower = arr.map((s) => s.toLowerCase());
+  return needles.some((n) => lower.some((l) => l.includes(n.toLowerCase())));
+}
+
 function fillBriefCells(ws: ExcelJS.Worksheet, brief: BriefData): void {
   // --- Alapveto informaciok ---
   if (brief.company_name) ws.getCell("B7").value = brief.company_name;
@@ -25,28 +39,44 @@ function fillBriefCells(ws: ExcelJS.Worksheet, brief: BriefData): void {
 
   // --- Kampany reszletek ---
   if (brief.campaign_name) ws.getCell("B19").value = brief.campaign_name;
-  if (brief.campaign_goal) ws.getCell("B21").value = brief.campaign_goal;
+  // B21 = "Kampány típusa" — campaign_types labels
+  if (brief.campaign_types && brief.campaign_types.length > 0) {
+    ws.getCell("B21").value = brief.campaign_types
+      .map((t) => CAMPAIGN_TYPE_LABELS[t as CampaignType] ?? t)
+      .join(", ");
+  }
   if (brief.main_message) ws.getCell("B23").value = brief.main_message;
 
   // --- Kreativok (checkbox cellak) ---
-  if (brief.creative_source) {
-    ws.getCell("C25").value = brief.creative_source.includes("client");
-    ws.getCell("C26").value = brief.creative_source.includes("agency");
-  }
+  // C25 = "Ügyfél biztosítja", C26 = "ROIworks készíti"
+  // Values can be English ("client"/"agency") or Hungarian from quick replies
+  const sources = brief.creative_source || [];
+  const isMindketto = hasAny(sources, "mindkettő", "both");
+  ws.getCell("C25").value =
+    isMindketto || hasAny(sources, "client", "ügyfél", "saját");
+  ws.getCell("C26").value =
+    isMindketto || hasAny(sources, "agency", "roiworks", "roi works", "készíti");
+
+  // E25 = "Statikus kreatívok", E26 = "Videós kreatívok"
+  const creativeTypes = brief.creative_types || [];
+  ws.getCell("E25").value = hasAny(creativeTypes, "statikus", "static", "kép");
+  ws.getCell("E26").value = hasAny(creativeTypes, "videó", "video");
 
   // --- Kommunikacios stilus ---
   if (brief.communication_style)
     ws.getCell("B28").value = brief.communication_style;
 
   // --- Online hirdetesi csatornak (checkbox cellak) ---
+  // Quick reply values: "Facebook", "Instagram", "Google Search", "Google GDN",
+  // "TikTok", "YouTube", "Microsoft" — template labels have " ads" suffix
   const channels = brief.ad_channels || [];
-  ws.getCell("C30").value = channels.includes("Facebook ads");
-  ws.getCell("E30").value = channels.includes("Instagram ads");
-  ws.getCell("C31").value = channels.includes("Google GDN");
-  ws.getCell("E31").value = channels.includes("Google Search");
-  ws.getCell("C32").value = channels.includes("Tiktok ads");
-  ws.getCell("E32").value = channels.includes("Microsoft ads");
-  ws.getCell("C33").value = channels.includes("YouTube ads");
+  ws.getCell("C30").value = hasChannel(channels, "Facebook ads");
+  ws.getCell("E30").value = hasChannel(channels, "Instagram ads");
+  ws.getCell("C31").value = hasChannel(channels, "Google GDN");
+  ws.getCell("E31").value = hasChannel(channels, "Google Search");
+  ws.getCell("C32").value = hasChannel(channels, "Tiktok ads");
+  ws.getCell("E32").value = hasChannel(channels, "Microsoft ads");
+  ws.getCell("C33").value = hasChannel(channels, "YouTube ads");
 
   // --- Kampany celja ---
   if (brief.campaign_goal) ws.getCell("B37").value = brief.campaign_goal;
@@ -54,17 +84,20 @@ function fillBriefCells(ws: ExcelJS.Worksheet, brief: BriefData): void {
   // --- KPI-k (checkbox cellak) ---
   const kpis = brief.kpis || [];
   ws.getCell("C39").value = kpis.includes("Elérés");
-  ws.getCell("E39").value = kpis.includes("Website event");
+  ws.getCell("E39").value =
+    kpis.includes("Website event") || hasAny(kpis, "konverzió", "lead");
   ws.getCell("C40").value = kpis.includes("Megjelenés");
-  ws.getCell("E40").value = kpis.includes("Social aktivitás");
+  ws.getCell("E40").value =
+    kpis.includes("Social aktivitás") || hasAny(kpis, "social");
   ws.getCell("C41").value = kpis.includes("Link kattintás");
 
   // --- Celcsoport ---
   const genders = brief.gender || [];
+  const allGenders = hasAny(genders, "mindkettő", "both");
   ws.getCell("C46").value =
-    genders.includes("Nő") || genders.includes("nő");
+    allGenders || genders.includes("Nő") || genders.includes("nő");
   ws.getCell("E46").value =
-    genders.includes("Férfi") || genders.includes("férfi");
+    allGenders || genders.includes("Férfi") || genders.includes("férfi");
   if (brief.location) ws.getCell("C47").value = brief.location;
   if (brief.age_range) ws.getCell("C48").value = brief.age_range;
 

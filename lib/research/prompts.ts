@@ -42,22 +42,30 @@ export function buildResearchPrompt(
   briefData: BriefData,
   templateType: MediaplanTemplate,
 ): string {
+  const budget = safe(briefData.budget_range);
+  const channelsRaw = safe(briefData.ad_channels, "");
+  const hasChannels = channelsRaw !== "";
+
   return `Készíts piackutatást az alábbi kampány briefhez:
 
 BRIEF ADATOK:
 - Cég: ${safe(briefData.company_name)}
 - Iparág: ${safe(briefData.industry)}
 - Kampánycél: ${safe(briefData.campaign_goal)}
-- Büdzsé: ${safe(briefData.budget_range)}
+- Büdzsé: ${budget}
 - Célcsoport kor: ${safe(briefData.age_range)}
 - Célcsoport nem: ${safe(briefData.gender)}
 - Célcsoport lokáció: ${safe(briefData.location, "Magyarország")}
 - Időszak: ${safe(briefData.start_date)} - ${safe(briefData.end_date)}
-- Hirdetési csatornák: ${safe(briefData.ad_channels, "nincs megadva — javasolj")}
+- Hirdetési csatornák: ${hasChannels ? channelsRaw : "nincs megadva — javasolj"}
 - Versenytársak: ${safe(briefData.competitors)}
 
 TEMPLATE TÍPUS: ${templateType}
 ${templateInstructions(templateType)}
+
+KÖTELEZŐ MEGSZORÍTÁSOK:
+${budget !== "nincs megadva" ? `- BÜDZSÉ LIMIT: A teljes kampány büdzsé PONTOSAN ${budget}. Ez az ABSZOLÚT MAXIMUM. Az összes csatorna költségének összege NEM HALADHATJA MEG ezt az összeget. A mediaplan MINDEN tételét ezen a kereten belül tervezd!` : "- Büdzsé nincs megadva — becsüld meg a kampánycél és iparág alapján."}
+${hasChannels ? `- CSATORNA MEGSZORÍTÁS: KIZÁRÓLAG az alábbi csatornákat használd a mediatervben: ${channelsRaw}. NE javasolj és NE adj hozzá más hirdetési csatornákat! Ha csak egy csatorna van megadva, a teljes büdzsét arra a csatornára oszd el.` : "- Nincs csatorna megszorítás — javasolj optimális csatorna mixet."}
 
 FELADATOK:
 1. Keress benchmark adatokat az iparágra (CPM, CPC, CTR, konverziós ráták a magyar piacon)
@@ -76,6 +84,9 @@ SZABÁLYOK:
 - KPI becslések: min (konzervatív), likely (reális), max (optimista) tartomány
 - Budget elosztás: minden csatornára százalékban (budget_allocation_pct) és forintban (budget_allocation_huf) is
 - A százalékok összege legyen 100%
+- A forint összegek (budget_allocation_huf) összege KÖTELEZŐEN egyezzen meg a total_budget_huf értékkel
+- Ha a büdzsé meg van adva, a total_budget_huf NEM HALADHATJA MEG a megadott büdzsét — ez kemény korlát
+- CSAK a megadott csatornákat vedd be a channels tömbbe — NE adj hozzá olyat ami nem szerepel a brief csatornalistájában
 - Kampánycéltól függő metrikák: Traffic csatornáknál impressions/ctr/clicks/cpc, Reach csatornáknál frequency/reach/cpm/cpv, Conversion-nél conversions/cpa — csak a releváns metrikákat töltsd ki
 - Ahol nincs elegendő adat a kutatásban, jelezd a research_notes mezőben
 - A sources mezőbe gyűjtsd össze a kutatásban hivatkozott forrásokat`;
